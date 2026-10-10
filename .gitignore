@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+.pytest_cache/
+data/*
+models/*
+logs/
+config.json
+*.log
+pytest-cache-files-*/
+.test-tmp-*/
+
+# Demo includes recorded landmark samples and the trained model.
+!data/*.npz
+!data/*.json
+!models/knn.npz
+!models/knn.json
+!models/evaluation.json

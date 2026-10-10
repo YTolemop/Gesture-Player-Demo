@@ -1,0 +1,605 @@
+{
+  "purpose": "test",
+  "capture_version": "image-mirrored-v1",
+  "config": {
+    "hand_mode": "single",
+    "single_hand": "right",
+    "swap_handedness": true,
+    "mirror_left": false,
+    "feature_version": "right-hand-normalization-v2",
+    "k": 5,
+    "distance_threshold": 1.0,
+    "vote_threshold": 0.6,
+    "filter_enabled": false
+  },
+  "samples": [
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6778.1360804,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6778.2800526,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6778.4080872,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6778.5360806,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6778.6800802,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6778.8081177,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6778.9520244,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6779.0800503,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6779.2080434,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6779.3527214,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6779.4800769,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6779.6080943,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6779.7520087,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6779.8800744,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6780.0088436,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6780.1520644,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6780.2801426,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6780.4240417,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6780.5520817,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6780.6801128,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6780.8240499,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6780.9520918,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6781.0800697,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6781.2240593,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6781.3520441,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6781.4807366,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6781.6240605,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6781.7521065,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6781.8967308,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6782.0240308,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6782.1520649,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6782.2960705,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6782.4240838,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6782.5520516,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6782.6960472,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6782.8240312,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6782.952247,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6783.0960863,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6783.2240769,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6783.3520517,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6783.4960638,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    },
+    {
+      "width": 640,
+      "height": 480,
+      "timestamp": 6783.624137,
+      "batch": "test-1791632431364853100",
+      "capture_version": "image-mirrored-v1",
+      "image_mirrored": true,
+      "camera": {
+        "index": 1,
+        "width": 640.0,
+        "height": 480.0,
+        "fps": 30.00003000003
+      }
+    }
+  ]
+}

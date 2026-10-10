@@ -1,0 +1,110 @@
+{
+  "valid": [
+    {
+      "protocolVersion": 1,
+      "sessionId": "fixture",
+      "matchId": null,
+      "seq": 0,
+      "gesture": "MOVE_LEFT",
+      "generation": 1
+    },
+    {
+      "protocolVersion": 1,
+      "sessionId": "fixture",
+      "matchId": null,
+      "seq": 1,
+      "gesture": "MOVE_RIGHT",
+      "generation": 1
+    },
+    {
+      "protocolVersion": 1,
+      "sessionId": "fixture",
+      "matchId": null,
+      "seq": 2,
+      "gesture": "JUMP",
+      "generation": 1
+    },
+    {
+      "protocolVersion": 1,
+      "sessionId": "fixture",
+      "matchId": null,
+      "seq": 3,
+      "gesture": "CROUCH",
+      "generation": 1
+    },
+    {
+      "protocolVersion": 1,
+      "sessionId": "fixture",
+      "matchId": null,
+      "seq": 4,
+      "gesture": "BLOCK",
+      "generation": 1
+    },
+    {
+      "protocolVersion": 1,
+      "sessionId": "fixture",
+      "matchId": null,
+      "seq": 5,
+      "gesture": "NORMAL_ATTACK",
+      "generation": 1
+    },
+    {
+      "protocolVersion": 1,
+      "sessionId": "fixture",
+      "matchId": null,
+      "seq": 6,
+      "gesture": "ATTACK_SKILL",
+      "generation": 1
+    },
+    {
+      "protocolVersion": 1,
+      "sessionId": "fixture",
+      "matchId": null,
+      "seq": 7,
+      "gesture": "DEFENSE_SKILL",
+      "generation": 1
+    },
+    {
+      "protocolVersion": 1,
+      "sessionId": "fixture",
+      "matchId": null,
+      "seq": 8,
+      "gesture": "CONTROL_SKILL",
+      "generation": 1
+    },
+    {
+      "protocolVersion": 1,
+      "sessionId": "fixture",
+      "matchId": null,
+      "seq": 9,
+      "gesture": "ULTIMATE",
+      "generation": 1
+    },
+    {
+      "protocolVersion": 1,
+      "sessionId": "fixture",
+      "matchId": null,
+      "seq": 10,
+      "gesture": "NONE",
+      "generation": 1
+    }
+  ],
+  "invalid": [
+    {
+      "protocolVersion": 2,
+      "sessionId": "fixture",
+      "matchId": null,
+      "seq": 0,
+      "gesture": "NONE",
+      "generation": 1
+    },
+    {
+      "protocolVersion": 1,
+      "sessionId": "fixture",
+      "matchId": null,
+      "seq": -1,
+      "gesture": "NONE",
+      "generation": 1
+    }
+  ]
+}

@@ -1,0 +1,554 @@
+{
+  "room:create": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "nickname"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "nickname": {
+        "type": "string"
+      }
+    }
+  },
+  "room:join": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "roomCode"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "roomCode": {
+        "type": "string"
+      }
+    }
+  },
+  "room:resume": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "roomCode",
+      "playerToken"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "roomCode": {
+        "type": "string"
+      },
+      "playerToken": {
+        "type": "string"
+      }
+    }
+  },
+  "room:leave": {
+    "type": "object",
+    "required": [
+      "requestId"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "room:seat": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "seat"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "seat": {
+        "type": "string"
+      }
+    }
+  },
+  "player:pause": {
+    "type": "object",
+    "required": [
+      "requestId"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "player:next": {
+    "type": "object",
+    "required": [
+      "requestId"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "room:assign": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "hostToken",
+      "seat",
+      "action"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "hostToken": {
+        "type": "string"
+      },
+      "seat": {
+        "type": "string"
+      },
+      "action": {
+        "type": "string"
+      }
+    }
+  },
+  "solo:create": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "nickname",
+      "mode"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "nickname": {
+        "type": "string"
+      },
+      "mode": {
+        "type": "string"
+      }
+    }
+  },
+  "solo:configure": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "loadout"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "loadout": {
+        "type": "object"
+      }
+    }
+  },
+  "solo:select": {
+    "type": "object",
+    "required": [
+      "requestId"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "solo:pick": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "skillId"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "skillId": {
+        "type": "string"
+      }
+    }
+  },
+  "player:source": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "source"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "source": {
+        "type": "string"
+      }
+    }
+  },
+  "player:ready": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "ready"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "ready": {
+        "type": "boolean"
+      }
+    }
+  },
+  "controller:code": {
+    "type": "object",
+    "required": [
+      "requestId"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "controller:pair": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "protocolVersion",
+      "pairCode",
+      "source"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "protocolVersion": {
+        "type": "integer"
+      },
+      "pairCode": {
+        "type": "string"
+      },
+      "source": {
+        "type": "string"
+      }
+    }
+  },
+  "controller:resume": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "roomCode",
+      "controllerToken"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "roomCode": {
+        "type": "string"
+      },
+      "controllerToken": {
+        "type": "string"
+      }
+    }
+  },
+  "controller:unbind": {
+    "type": "object",
+    "required": [
+      "requestId"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "controller:availability": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "normalization",
+      "knn"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "normalization": {
+        "type": "boolean"
+      },
+      "knn": {
+        "type": "boolean"
+      }
+    }
+  },
+  "draft:start": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "hostToken"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "hostToken": {
+        "type": "string"
+      }
+    }
+  },
+  "draft:pick": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "skillId"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "skillId": {
+        "type": "string"
+      }
+    }
+  },
+  "match:start": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "hostToken"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "hostToken": {
+        "type": "string"
+      }
+    }
+  },
+  "match:pause": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "hostToken"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "hostToken": {
+        "type": "string"
+      }
+    }
+  },
+  "match:resume": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "hostToken"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "hostToken": {
+        "type": "string"
+      }
+    }
+  },
+  "match:rematch": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "hostToken"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "hostToken": {
+        "type": "string"
+      }
+    }
+  },
+  "match:next": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "hostToken"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "hostToken": {
+        "type": "string"
+      }
+    }
+  },
+  "match:forfeit": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "hostToken",
+      "player",
+      "reason"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "hostToken": {
+        "type": "string"
+      },
+      "player": {
+        "type": "integer"
+      },
+      "reason": {
+        "type": "string"
+      }
+    }
+  },
+  "practice:start": {
+    "type": "object",
+    "required": [
+      "requestId"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "practice:reset": {
+    "type": "object",
+    "required": [
+      "requestId"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "practice:pause": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "hostToken"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "hostToken": {
+        "type": "string"
+      }
+    }
+  },
+  "practice:resume": {
+    "type": "object",
+    "required": [
+      "requestId",
+      "hostToken"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "hostToken": {
+        "type": "string"
+      }
+    }
+  },
+  "practice:stats-reset": {
+    "type": "object",
+    "required": [
+      "requestId"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "pve:start": {
+    "type": "object",
+    "required": [
+      "requestId"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "pve:quit": {
+    "type": "object",
+    "required": [
+      "requestId"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "leaderboard:list": {
+    "type": "object",
+    "required": [
+      "requestId"
+    ],
+    "properties": {
+      "requestId": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}

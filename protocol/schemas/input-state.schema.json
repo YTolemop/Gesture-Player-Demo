@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "InputState",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocolVersion",
+    "sessionId",
+    "matchId",
+    "seq",
+    "gesture",
+    "generation"
+  ],
+  "properties": {
+    "protocolVersion": {
+      "const": 1
+    },
+    "sessionId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "matchId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "gesture": {
+      "enum": [
+        "MOVE_LEFT",
+        "MOVE_RIGHT",
+        "JUMP",
+        "CROUCH",
+        "BLOCK",
+        "NORMAL_ATTACK",
+        "ATTACK_SKILL",
+        "DEFENSE_SKILL",
+        "CONTROL_SKILL",
+        "ULTIMATE",
+        "NONE"
+      ]
+    },
+    "diagnostics": {
+      "type": "object"
+    }
+  }
+}

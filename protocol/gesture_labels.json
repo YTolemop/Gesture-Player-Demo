@@ -1,0 +1,28 @@
+{
+  "protocolVersion": 1,
+  "labels": [
+    "MOVE_LEFT",
+    "MOVE_RIGHT",
+    "JUMP",
+    "CROUCH",
+    "BLOCK",
+    "NORMAL_ATTACK",
+    "ATTACK_SKILL",
+    "DEFENSE_SKILL",
+    "CONTROL_SKILL",
+    "ULTIMATE",
+    "NONE"
+  ],
+  "classIds": {
+    "0": "MOVE_LEFT",
+    "1": "MOVE_RIGHT",
+    "2": "JUMP",
+    "3": "CROUCH",
+    "4": "BLOCK",
+    "5": "NORMAL_ATTACK",
+    "6": "ATTACK_SKILL",
+    "7": "DEFENSE_SKILL",
+    "8": "CONTROL_SKILL",
+    "9": "ULTIMATE"
+  }
+}

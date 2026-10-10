@@ -1,0 +1,86 @@
+{
+  "type": "object",
+  "required": [
+    "protocolVersion",
+    "roomId",
+    "roomCode",
+    "matchId",
+    "phase",
+    "mode",
+    "generation",
+    "source",
+    "sessionId",
+    "rulesVersion",
+    "aiVersion"
+  ],
+  "properties": {
+    "protocolVersion": {
+      "const": 1
+    },
+    "roomId": {
+      "type": "string"
+    },
+    "roomCode": {
+      "type": "string"
+    },
+    "matchId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "phase": {
+      "enum": [
+        "LOBBY",
+        "DRAFT",
+        "READY",
+        "CONFIG",
+        "COUNTDOWN",
+        "PLAYING",
+        "OVERTIME",
+        "PAUSED",
+        "RESUME_COUNTDOWN",
+        "INTERMISSION",
+        "RESULT"
+      ]
+    },
+    "mode": {
+      "enum": [
+        "PVP",
+        "PRACTICE",
+        "PVE"
+      ]
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source": {
+      "enum": [
+        "recognizer",
+        "keyboard"
+      ]
+    },
+    "sessionId": {
+      "type": "string"
+    },
+    "runId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "roundIndex": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "rulesVersion": {
+      "type": "string"
+    },
+    "aiVersion": {
+      "type": "string"
+    }
+  }
+}

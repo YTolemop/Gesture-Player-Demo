@@ -1,0 +1,75 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "runId",
+    "playerId",
+    "nickname",
+    "defeated",
+    "reason",
+    "ticks",
+    "hp",
+    "rulesVersion",
+    "aiVersion",
+    "sourceHistory",
+    "eligible",
+    "internal",
+    "completedAt",
+    "seed"
+  ],
+  "properties": {
+    "runId": {
+      "type": "string"
+    },
+    "playerId": {
+      "type": "string"
+    },
+    "nickname": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "rulesVersion": {
+      "type": "string"
+    },
+    "aiVersion": {
+      "type": "string"
+    },
+    "completedAt": {
+      "type": "string"
+    },
+    "defeated": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "ticks": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "hp": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1000
+    },
+    "seed": {
+      "type": "integer"
+    },
+    "eligible": {
+      "type": "boolean"
+    },
+    "internal": {
+      "type": "boolean"
+    },
+    "sourceHistory": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "recognizer",
+          "keyboard",
+          "simulated"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "required": [
+    "requestId",
+    "ok"
+  ],
+  "properties": {
+    "requestId": {
+      "type": "string"
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "errorCode": {
+      "type": "string"
+    }
+  }
+}

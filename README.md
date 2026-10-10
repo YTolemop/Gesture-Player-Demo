@@ -1,0 +1,620 @@
+---
+title: 手勢訓練器：學員操作與程式實作指南
+
+---
+
+# 手勢訓練器：從第一筆資料到控制競技場
+
+> **Demo 版本**：本專案已完成正規化、KNN 與濾波實作，並附上目前訓練好的模型、錄製資料及測試報告。完成環境安裝後，可直接開啟工具，按「載入KNN模型」，開啟鏡頭並切換至 recognize。以下保留完整學員指南，方便重新採集、訓練或調整算法；不需要先重寫 student/ 才能使用 Demo。模型使用錄製者的手勢訓練，換人使用時可依指南重新錄製與訓練。
+
+本文預設學員已依課前通知安裝好 **VS Code 與 Python 3.13.2**。
+
+>若還未完成，請先安裝完畢後再進行以下步驟，如安裝遇到問題，請妥善利用網路資源，或尋求助教協助。
+
+## 目錄
+
+- [1. 下載專案](#step-1)
+- [2. 建立.venv與安裝套件](#step-2)
+- [3. 開啟工具，確認鏡頭](#step-3)
+- [4. 錄下十種手勢](#step-4)
+- [5. 完成正規化、KNN與選做濾波](#step-5)
+- [6. 訓練並試試辨識效果](#step-6)
+- [7. 連上競技場](#step-7)
+- [8. 其它](#others)
+
+<a id="step-1"></a>
+## 1. 下載專案
+
+1. 開啟 [GitHub專案](https://github.com/YTolemop/Gesture-Player-Demo)，按 **Code → Download ZIP**。
+![螢幕擷取畫面 2026-10-10 164705](https://hackmd.io/_uploads/SkYAsuwsfx.png)
+3. 完整解壓縮到自己的資料夾，不要在壓縮檔裡直接執行。
+4. 開啟VS Code。選「檔案 → 開啟資料夾」，開啟解壓後的 **Gesture-Player-Demo-main**。
+![螢幕擷取畫面 2026-10-10 180343](https://hackmd.io/_uploads/rkepatwjfl.png)
+6. 選「終端機 → 新增終端機」。接下來的命令都在這裡輸入。
+![螢幕擷取畫面 2026-10-10 164645](https://hackmd.io/_uploads/ryKk3Ovifg.png)
+
+
+完成時：
+![image](https://hackmd.io/_uploads/B1NIAKDjGg.png)
+
+> Windows用PowerShell，Mac／Linux用zsh或bash。
+
+<details>
+<summary>已經會使用Git？也可以這樣下載</summary>
+
+```bash
+git clone https://github.com/YTolemop/Gesture-Player-Demo.git
+cd Gesture-Player-Demo
+```
+
+</details>
+
+<a id="step-2"></a>
+## 2. 建立.venv與安裝套件
+
+Python已安裝好，這一步替專案建立獨立環境並安裝需要的套件。
+
+| 你的系統 | 使用哪組指令 |
+|---|---|
+| Windows x64 | Windows PowerShell |
+| Mac（M系列晶片） | Mac／Linux，使用原生Apple Silicon環境 |
+| Linux x86_64 | Mac／Linux，需有桌面環境、glibc 2.28以上與Tk支援 |
+
+### 在終端機建立環境
+
+Windows先確認版本，再建立環境：
+
+```powershell
+python --version
+python -m venv .venv
+& '.\.venv\Scripts\python.exe' -m pip install -r requirements-lock.txt
+& '.\.venv\Scripts\python.exe' main.py prepare
+& '.\.venv\Scripts\python.exe' main.py check
+```
+
+Mac／Linux使用：
+
+```bash
+python3.13 --version
+python3.13 -m venv .venv
+./.venv/bin/python -m pip install -r requirements-lock.txt
+./.venv/bin/python main.py prepare
+./.venv/bin/python main.py check
+```
+
+第一行應顯示 **Python 3.13.2**。`.venv` 就是本專案自己的Python環境；`requirements-lock.txt` 列出要安裝的套件與版本。只在第一次使用或重建環境時做這一段，不需要每次開工具都重做。
+
+完成時：
+![image](https://hackmd.io/_uploads/SJxS19vifx.png)
+
+### 讓VS Code選對Python
+
+按 **Ctrl+Shift+P**（Mac為 **Cmd+Shift+P**）搜尋 **Python: Select Interpreter**，選本專案的.venv。
+![螢幕擷取畫面 2026-10-10 181208](https://hackmd.io/_uploads/Bk4WxcvjMx.png)
+![螢幕擷取畫面 2026-10-10 181235](https://hackmd.io/_uploads/BJw-e5Pofg.png)
+
+<a id="step-3"></a>
+## 3. 開啟工具，確認鏡頭
+
+之後每次開啟，只要用這一行。
+
+**Windows PowerShell**
+
+```powershell
+& '.\.venv\Scripts\python.exe' main.py gui
+```
+
+**Mac／Linux**
+
+```bash
+./.venv/bin/python main.py gui
+```
+
+1. 在「即時辨識」頁，模式先保持 **preview**（預覽）。
+2. 鏡頭索引先選0，按「開啟鏡頭」。如果沒有鏡頭畫面再切換索引。
+![螢幕擷取畫面 2026-10-10 181529](https://hackmd.io/_uploads/Hy1Kb9woMl.png)
+3. 把右手完整放進畫面，確認手上有點與連線。
+4. 看右側採集頁的偵測文字，確認自己的右手被標為右手。
+![螢幕擷取畫面 2026-10-10 182004](https://hackmd.io/_uploads/rJB_-5vsGx.png)
+
+| 常見問題 | 解決方法 |
+|---|---|
+| 鏡頭黑畫面 | 關閉其他使用鏡頭的程式、換索引，確認系統攝影機權限 |
+| 偵測左右手反了 | 關閉工具，修改config.example.json中的swap_handedness，切換其true／false，重開確認 |
+
+>鏡頭權限：Windows在設定的攝影機隱私權允許桌面應用程式；Mac在「系統設定 → 隱私權與安全性 → 攝影機」允許VS Code／Terminal後重啟；Linux需本機桌面與攝影機裝置的存取權限，必要時請管理員協助。請在本機桌面操作，不在WSL或無桌面遠端終端開啟鏡頭GUI。
+
+
+<a id="step-4"></a>
+## 4. 錄下十種手勢
+
+先為每一類想一個**不同的右手固定姿勢**，把對應記下來。例如張開五指代表跳、握拳代表蹲下；這只是例子，你可以自行設計。
+
+| 類別編號 | 標籤 | 遊戲動作 |
+|---|---|---|
+| 0 | MOVE_LEFT | 向左移動 |
+| 1 | MOVE_RIGHT | 向右移動 |
+| 2 | JUMP | 跳躍 |
+| 3 | CROUCH | 蹲下 |
+| 4 | BLOCK | 格擋 |
+| 5 | NORMAL_ATTACK | 普通攻擊 |
+| 6 | ATTACK_SKILL | 攻擊技能 |
+| 7 | DEFENSE_SKILL | 防禦技能 |
+| 8 | CONTROL_SKILL | 控制技能 |
+| 9 | ULTIMATE | 大招 |
+
+### 先完成一個類別，再換下一個
+
+1. 到「採集/訓練」，選一個「錄製類別」，用途選 **train**。
+2. 按「開始錄製」，倒數三秒期間擺好右手。
+![螢幕擷取畫面 2026-10-10 182156](https://hackmd.io/_uploads/S1BWG5Pjfl.png)
+3. 保持姿勢約10～15秒，可以輕微改變位置、距離；確認「有效」筆數增加。
+4. 按「停止錄製」，資料會自動保存，列表出現類別、用途、筆數與時間。
+![螢幕擷取畫面 2026-10-10 182448](https://hackmd.io/_uploads/Sk1e79wsfx.png)
+![螢幕擷取畫面 2026-10-10 182504](https://hackmd.io/_uploads/By4e75PjGx.png)
+5. 同一類改成 **test**，先放下手，再重新擺出姿勢錄一次並保存。
+![螢幕擷取畫面 2026-10-10 182719](https://hackmd.io/_uploads/H1cXmqDsfg.png)
+6. 換下一類，直到十類都有train與test。
+
+完成時：資料列表中，每一類至少有一筆train和一筆test。
+
+>需重錄時選對那列，按「刪除所選資料」。
+![螢幕擷取畫面 2026-10-10 182831](https://hackmd.io/_uploads/ByHOX5wizl.png)
+
+保存位置是`data/`，每次有一個.npz（關鍵點、類別）和同名.json（用途等資訊）。這時不用按訓練，先繼續完成下一步的算法。
+
+<a id="step-5"></a>
+## 5. 完成三個算法
+
+你要接手的是這段流程：
+
+```text
+右手21個點 → 正規化成63個數值 → KNN判斷手勢 → 可選濾波 → 競技場
+```
+
+只修改下面三個檔案，保留已有的類別、函式名稱與參數，將 `raise NotImplementedError(...)` 換成你的實作。不需要另寫main，也不用自己呼叫鏡頭、讀取錄製檔或連線競技場。
+
+| 順序 | 檔案與函式 | 要解決的問題 | 回傳結果 |
+|---|---|---|---|
+| 先寫 | `student/normalization.py` 的 `transform` | 同一姿勢換位置、變大小，仍能比較 | `FeatureResult`，含63個float32值 |
+| 再寫 | `student/knn.py` 的 `fit`、`predict` | 用已錄製的樣本判斷新手勢 | `fit` 回None；`predict` 回 `Prediction` |
+| 選做 | `student/filtering.py` 的 `update`、`reset` | 避免分類短暫跳動就切換動作 | `update` 回標籤字串；`reset` 回None |
+
+**資料會透過函式參數送進來。** 接下來每段先說明計算方法，再提供可對照的完整實作。先理解每一步，完成基本版本後，再嘗試修改策略。
+
+### A. 正規化：消除位置與大小影響
+
+同一個手勢移到畫面另一邊，所有點的座標都會改變；靠近鏡頭，點之間的距離也會變大。我們先換成一致單位，再讓手腕成為原點，最後除以手掌大小。
+
+#### 第1步：取得資料，換成一致的像素尺度
+
+`transform` 收到的 `sample` 是一筆手部資料。`sample.right` 是21列、3欄的NumPy陣列，每一列代表一個點，每列的三欄依序是x、y、z。`sample.width`、`sample.height` 是影像的像素寬度與高度。
+
+原始x、y使用畫面比例，z使用畫面寬度作為尺度，因此x與z乘以寬度，y乘以高度：
+
+```python
+points = np.array(sample.right, dtype=np.float64, copy=True)
+points[:, 0] *= sample.width
+points[:, 1] *= sample.height
+points[:, 2] *= sample.width
+```
+
+第一行把已有的資料複製成陣列，使用64位元浮點數計算；不是讀檔。`copy=True` 避免後面修改到原始資料。`np` 來自檔案開頭的 `import numpy as np`。
+
+`points[:, 0]` 表示「全部列的第0欄」，也就是21個x；第1欄是y，第2欄是z。例如畫面寬640像素，x為0.5，換算後就是320。
+
+#### 第2步：所有點減去手腕，消除位置影響
+
+第0個點是手腕。Python索引從0開始，所以用 `points[0]` 取得它的xyz：
+
+```python
+wrist = points[0]
+centered = points - wrist
+```
+
+NumPy會讓每一列都減去同一組手腕xyz。手腕因此變成 `(0, 0, 0)`，其餘點表示相對於手腕的位置。當整隻手平移時，這些相對位置不會跟著平移。
+
+#### 第3步：除以手掌大小，消除整體縮放影響
+
+第9個點是中指根部。我們用手腕到中指根部的三維距離代表手掌大小：
+
+```python
+palm_size = np.linalg.norm(centered[9])
+normalized = centered / palm_size
+```
+
+手腕已經在原點，所以 `centered[9]` 就是手腕到中指根部的向量。`np.linalg.norm` 計算向量長度，即 `sqrt(x² + y² + z²)`。
+
+所有座標除以這個長度後，手腕到中指根部的距離變成1。例如某點離手腕40、手掌尺度80，相除是0.5；整體放大兩倍後，80除以160仍是0.5。這能消除整體縮放的影響，但不能保證不同拍攝角度的手勢完全相同。
+
+我們沒有旋轉或翻轉座標，因此仍保留手勢方向。
+
+#### 第4步：排成63個數值並回傳
+
+21個點乘以每點3個數值，共63個值：
+
+```python
+features = normalized.reshape(63).astype(np.float32)
+```
+
+`reshape(63)` 依序排成「第0點x、y、z，第1點x、y、z……」；`astype(np.float32)` 轉成接口要求的32位元浮點數。最後把它放進 `FeatureResult`，工具才知道如何使用。
+
+#### 正規化完整實作
+
+在 `student/normalization.py` 保留原有接口，實作如下：
+
+```python
+import numpy as np
+from core.types import RawHandSample, FeatureResult
+
+
+class StudentNormalizer:
+    def transform(self, sample: RawHandSample, config: dict) -> FeatureResult:
+        # 換成一致的像素尺度；建立副本，不修改輸入。
+        points = np.array(sample.right, dtype=np.float64, copy=True)
+        points[:, 0] *= sample.width
+        points[:, 1] *= sample.height
+        points[:, 2] *= sample.width
+
+        # 以手腕為原點，再除以手掌尺度。
+        centered = points - points[0]
+        palm_size = np.linalg.norm(centered[9])
+        normalized = centered / palm_size
+
+        features = normalized.reshape(63).astype(np.float32)
+        return FeatureResult(
+            valid=True,
+            features=features,
+            featureVersion=config['feature_version'],
+        )
+```
+
+### B. KNN：找出最相似的樣本，再投票
+
+KNN的想法是：新手勢像哪些已錄製的手勢，就讓最相似的k筆樣本投票。例如k=5，最近五筆的類別是 `[2, 2, 3, 2, 3]`，類別2得到三票，得票比例為 `3 / 5 = 0.6`。
+
+我們分兩個函式完成：`fit` 保存訓練資料與設定；`predict` 比較一筆新資料、找鄰居、投票並決定是否接受分類。
+
+#### 第1步：在fit保存訓練資料與設定
+
+工具會提供以下參數：
+
+| 參數 | 內容 |
+|---|---|
+| `features` | `(N, 63)` 陣列，每列是一筆正規化後的手勢；N是樣本數 |
+| `labels` | `(N,)` 整數陣列，每筆對應同一列手勢的類別編號0～9 |
+| `config` | 包含k、投票門檻與距離門檻的設定 |
+
+`features[0]` 和 `labels[0]` 分別是第一筆手勢與它的正確類別。保存方式如下：
+
+```python
+self.training_features = features.copy()
+self.training_labels = labels.copy()
+self.k = config.get('k', 5)
+self.vote_threshold = config.get('vote_threshold', 0.6)
+self.distance_threshold = config.get('distance_threshold', 1.0)
+```
+
+`self` 代表目前的分類器物件。資料存到 `self` 上，之後的 `predict` 才能取得；只寫區域變數 `training_features = ...`，不會保存成物件屬性。
+
+`config.get('k', 5)` 表示取得k，若沒有這個欄位就使用5。`fit` 不分類，也不需要自己寫模型檔；函式結束時回傳None即可。
+
+#### 第2步：在predict計算每筆樣本的距離
+
+`predict` 收到的 `features` 是一筆新手勢，形狀 `(63,)`。讓每筆訓練特徵減去它，再算每一列的長度：
+
+```python
+differences = self.training_features - features
+distances = np.linalg.norm(differences, axis=1)
+```
+
+相减後仍是 `(N, 63)`；`axis=1` 表示沿每一列的63個數值計算，得到N個距離。這就是歐氏距離：差異的平方相加，再開平方。距離越小，表示兩筆正規化特徵越接近。
+
+#### 第3步：取最近的k筆樣本
+
+```python
+order = np.argsort(distances, kind='stable')
+neighbor_indices = order[:self.k]
+neighbor_labels = self.training_labels[neighbor_indices]
+```
+
+`argsort` 回傳的是由近到遠排列的「樣本索引」，不是距離本身。例如距離是 `[0.8, 0.2, 0.5]`，索引順序就是 `[1, 2, 0]`。`[:self.k]` 取前k個，再用這些索引取得鄰居的類別。
+
+`kind='stable'` 讓距離相同的樣本維持原本順序，結果較容易重現。
+
+#### 第4步：統計票數，選出類別
+
+```python
+counts = np.bincount(neighbor_labels, minlength=len(LABELS))
+class_id = int(np.argmax(counts))
+ratio = float(counts[class_id] / self.k)
+```
+
+`bincount` 計算每個類別有幾票；`argmax` 取得票數最多的類別編號。這個基本版本遇到同票時，選編號較小的類別，因為 `argmax` 會取第一個最大值。之後也可以改成以候選類別的距離決勝。
+
+`ratio` 是鄰居投票比例，**不是辨識準確率，也不是校準後的機率**。
+
+#### 第5步：太遠或票數不集中，就拒絕分類
+
+即使是沒錄過的姿勢，也一定找得到最近的樣本。因此不能只看誰票數最多，還要設定接受條件：
+
+```python
+distance = float(distances[neighbor_indices[0]])
+valid = (
+    distance <= self.distance_threshold
+    and ratio >= self.vote_threshold
+)
+label = LABELS[class_id] if valid else 'NONE'
+```
+
+這裡要求「最近樣本夠近」和「得票比例夠高」兩項都通過。`LABELS[class_id]` 把編號轉成標籤字串，例如類別2對應 `JUMP`。拒絕時使用 `NONE`，表示現在沒有可接受的分類。門檻只能協助拒絕，不能保證所有未知手勢都會被拒絕。
+
+#### KNN完整實作
+
+把以下內容放進 `student/knn.py` 對應的方法。**沿用原檔的類別名稱與函式簽名**；下面以 `StudentKNN` 示範類別結構：
+
+```python
+import numpy as np
+from core.labels import LABELS
+from core.types import Prediction
+
+
+class StudentKNN:
+    def fit(self, features, labels, config):
+        self.training_features = features.copy()
+        self.training_labels = labels.copy()
+        self.k = int(config.get('k', 5))
+        self.vote_threshold = float(config.get('vote_threshold', 0.6))
+        self.distance_threshold = float(config.get('distance_threshold', 1.0))
+        return None
+
+    def predict(self, features):
+        differences = self.training_features - features
+        distances = np.linalg.norm(differences, axis=1)
+
+        order = np.argsort(distances, kind='stable')
+        neighbor_indices = order[:self.k]
+        neighbor_labels = self.training_labels[neighbor_indices]
+
+        counts = np.bincount(neighbor_labels, minlength=len(LABELS))
+        class_id = int(np.argmax(counts))
+        ratio = float(counts[class_id] / self.k)
+        distance = float(distances[neighbor_indices[0]])
+
+        valid = (
+            distance <= self.distance_threshold
+            and ratio >= self.vote_threshold
+        )
+        label = LABELS[class_id] if valid else 'NONE'
+        return Prediction(
+            label=label,
+            valid=valid,
+            nearest_distance=distance,
+            vote_ratio=ratio,
+        )
+```
+
+### C. 濾波：新分類持續一段時間才輸出（選做）
+
+先保持濾波關閉，確認KNN能辨識後再做。假設連續結果是「JUMP、JUMP、BLOCK、JUMP」，中間短暫的BLOCK可能只是抖動；每次分類一變就輸出，角色也會跟著跳動。
+
+這裡示範一個容易實作的策略：**同一候選標籤持續至少0.15秒，才開始輸出；候選改變時先回NONE，重新等待。** 這會增加一點延遲，也可能讓很短的手勢無法通過，可以在實測後調整等待時間。
+
+#### 第1步：保存候選標籤與開始時間
+
+濾波每次收到的是KNN回傳的 `prediction`，不是21個座標：
+
+| 資料 | 用途 |
+|---|---|
+| `prediction.label` | 這次分類的標籤，例如 `JUMP` |
+| `prediction.valid` | KNN是否接受這次分類 |
+| `timestamp` | 這次更新的單調遞增時鐘秒數，不是影格編號或日期 |
+
+需要跨次保存的資料有：
+
+```python
+self.candidate = None
+self.start_time = None
+```
+
+`candidate` 記錄正在觀察的標籤；`start_time` 記錄第一次看到它的時間。這些要放在 `self` 上，下一次呼叫才能接著計算。
+
+#### 第2步：無效分類立即停止輸出
+
+```python
+if not prediction.valid or prediction.label == 'NONE':
+    self.reset()
+    return 'NONE'
+```
+
+未知分類不能延續上一個攻擊，所以要清除候選和計時，立即回傳NONE。
+
+#### 第3步：標籤改變時，重新計時
+
+```python
+if prediction.label != self.candidate:
+    self.candidate = prediction.label
+    self.start_time = timestamp
+    return 'NONE'
+```
+
+第一次收到標籤也會進入這段，因為初始候選是None。先記錄標籤和時間，暫時不輸出動作。
+
+#### 第4步：同一標籤持續夠久，就輸出
+
+```python
+elapsed = timestamp - self.start_time
+if elapsed >= self.hold_seconds:
+    return self.candidate
+return 'NONE'
+```
+
+例如第一次看到JUMP的時間是12.00秒，下一次仍是JUMP且時間為12.16秒，已經持續0.16秒，就能通過0.15秒門檻。
+
+這裡的「持續」是指每次收到的分類都相同；中間只要變成別的類別或無效結果，就重新計時。穩定後會持續回傳該標籤，不是只回傳一次。
+
+#### 濾波完整實作
+
+把以下邏輯放進 `student/filtering.py`，**沿用原有類別名稱與函式簽名**。下面以 `StudentFilter` 示範；若原檔已有 `__init__`，將初始化內容合併進去：
+
+```python
+from core.types import Prediction
+
+
+class StudentFilter:
+    def __init__(self):
+        self.hold_seconds = 0.15
+        self.reset()
+
+    def reset(self):
+        self.candidate = None
+        self.start_time = None
+        return None
+
+    def update(self, prediction: Prediction, timestamp: float) -> str:
+        if not prediction.valid or prediction.label == 'NONE':
+            self.reset()
+            return 'NONE'
+
+        if prediction.label != self.candidate:
+            self.candidate = prediction.label
+            self.start_time = timestamp
+            return 'NONE'
+
+        elapsed = timestamp - self.start_time
+        if elapsed >= self.hold_seconds:
+            return self.candidate
+        return 'NONE'
+```
+
+### 接口測試與實際確認
+
+「接口」就是輸入和輸出的約定。完成程式後先保存，再執行：
+
+**Windows PowerShell**
+
+```powershell
+& '.\.venv\Scripts\python.exe' -m pytest tests/test_student_contracts.py
+```
+
+**Mac／Linux**
+
+```bash
+./.venv/bin/python -m pytest tests/test_student_contracts.py
+```
+
+看到 `passed` 表示通過這份測試涵蓋的檢查，還需要在下一節訓練與實測，確認辨識效果。
+
+<a id="step-6"></a>
+## 6. 訓練並試試辨識效果
+
+1. 保存程式，關閉工具再重新開啟，讓它載入新程式。
+2. 在「採集/訓練」按 **訓練**。工具只使用train資料，成功後會自動載入模型。
+3. 按 **測試**，使用test檢查模型。報告會存成`models/evaluation.json`。
+![螢幕擷取畫面 2026-10-10 200526](https://hackmd.io/_uploads/BkH89svoMx.png)
+4. 到「即時辨識」，開鏡頭，把preview改成 **recognize**（辨識）。
+5. 逐一做十個姿勢，再把手移出畫面，確認停止輸出。
+![螢幕擷取畫面 2026-10-10 200715](https://hackmd.io/_uploads/Hydi5iviGg.png)
+
+> 下次重開工具，要先按「載入KNN模型」，不必每次重新訓練。
+![螢幕擷取畫面 2026-10-10 200826](https://hackmd.io/_uploads/rypAcsDofg.png)
+
+<a id="step-7"></a>
+## 7. 連上競技場
+
+1. 網站進「假人練習」，控制來源選「手勢辨識器」，按「產生配對碼」。
+![螢幕擷取畫面 2026-10-10 201741](https://hackmd.io/_uploads/S1zyCoPizg.png)
+![螢幕擷取畫面 2026-10-10 201915](https://hackmd.io/_uploads/SkOxRivizx.png)
+2. Python工具載入模型、開鏡頭、切recognize，先做一個手勢確認分類可用。
+![螢幕擷取畫面 2026-10-10 201841](https://hackmd.io/_uploads/BkI1RsDsfe.png)
+4. 到「配對」填主機網址和配對碼；單人練習房間碼留空。
+![螢幕擷取畫面 2026-10-10 201931](https://hackmd.io/_uploads/HyCx0jwsfl.png)
+4. 按「配對」。成功後按鈕會變成「解除配對」。
+5. 網站顯示辨識器已連線、算法可用後，按「確認準備」，選技能並等待倒數。
+6. 試左右移動、普通攻擊與技能；最後把手移開，確認角色停止接收動作。
+
+## 想改善辨識？再調整KNN參數
+
+學員可以調整 `k`、`vote_threshold`、`distance_threshold`。直接修改專案內的 `config.example.json`。JSON數值不要加引號，並保留正確逗號格式。
+
+| 參數 | 預設值 | 允許範圍與用途 |
+|---|---|---|
+| `k` | 5 | 正整數，不可超過實際可用的訓練樣本數；決定取幾個最近鄰居投票 |
+| `vote_threshold` | 0.6 | 0～1；最低得票比例，越高越要求鄰居分類一致，可能增加NONE |
+| `distance_threshold` | 1.0 | 非負有限數值；最近距離的拒絕門檻，越小越嚴格，可能增加NONE。單位是正規化特徵距離，不是像素或公分 |
+
+例如k=5、vote_threshold=0.6時，至少3個鄰居投同一類才符合投票條件；是否接受分類仍取決於你實作的距離拒絕規則。不要把投票比例當成實際辨識準確率。
+
+**設定不會自動替你實作算法。** 你的 `fit` 必須讀取設定並存到self，`predict` 必須實際使用它們。可用的讀取方式：
+
+```python
+config.get('k', 5)
+config.get('vote_threshold', 0.6)
+config.get('distance_threshold', 1.0)
+```
+
+`get` 的第二個參數是欄位缺少時的預設值；只有呼叫get而沒有保存、使用結果，不會改變分類行為。若在算法中把k或門檻寫死，修改JSON也不會生效。
+
+修改後依序：
+
+1. 保存 `config.example.json`，關閉並重開工具，讓設定重新載入。
+2. 按「訓練」，以新設定重新建立並載入模型；目前模型相容檢查包含這些參數，舊模型不能直接用新設定載入。
+3. 按「測試」，比較獨立test結果，再做即時辨識。
+
+建議每次只改一個參數並記錄結果。只調KNN參數通常不用重新採集；修改正規化特徵定義則需要重新計算特徵並訓練。右手單手規則仍固定，不能透過修改hand_mode或single_hand改變。
+
+<a id="others"></a>
+## 其它
+
+<details>
+<summary>各個資料夾與設定檔在做什麼？</summary>
+
+| 位置 | 用途 | 學員要改嗎？ |
+|---|---|---|
+| student | 正規化、KNN、濾波算法 | 要，濾波選做 |
+| data | 錄製後生成的原始關鍵點與用途 | 用介面管理 |
+| models | 訓練後生成的個人模型、測試報告 | 不手改 |
+| .venv | 本機Python與套件，每台電腦自行建立 | 不手改 |
+| .vscode | 編輯器解譯器與測試設定 | 通常不用 |
+| assets | MediaPipe關鍵點模型，不是個人KNN模型 | 不用 |
+| core、ui、network | 鏡頭、資料讀寫、介面、安全檢查、配對 | 不用 |
+| protocol | 與競技場共用的標籤與訊息格式 | 不用 |
+| tests | 接口與共用工具測試 | 執行即可 |
+| requirements-lock.txt | 固定套件版本，含間接依賴 | 不用 |
+| pyproject.toml | 專案與pytest設定 | 不用 |
+| config.example.json | 工具設定，直接在此調整KNN參數 | 需要時再調 |
+| .gitignore | 避免把環境、個人資料與模型加入Git | 不用 |
+
+套件損壞時可重新安裝requirements-lock，必要時重建.venv；保留student、data、models與你修改過的config.example.json。不要任意升級套件。
+
+</details>
+
+<details>
+<summary>工具怎麼呼叫我的算法？</summary>
+
+| 你的函式 | 共用工具入口 | 結果去向 |
+|---|---|---|
+| transform | core/features.py的feature | 檢查後交給訓練或分類 |
+| fit | core/model_io.py的訓練、載入 | 保存資料／重建分類器 |
+| predict | ui/app.py即時辨識、core/model_io.py測試 | 評估、濾波或直接輸出 |
+| update、reset | core/features.py的OutputRouter | 控制輸出與清除歷史 |
+
+訓練只讀train，測試只讀test；共用工具先驗證右手、尺寸、數值與手掌尺度，再呼叫正規化。你只要使用參數、計算並return。正規化定義改變後需要重算特徵、重新訓練；目前特徵版本由main.py固定，如要新增版本由老師維護。
+
+</details>
+
+<details>
+<summary>第三方資源與授權</summary>
+
+
+本工具只使用 Hand Landmarker，不使用 Gesture Recognizer。
+
+模型保存位置：`assets/models/hand_landmarker.task`。
+來源：https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task
+SHA-256：`fbc2a30080c3c557093b5ddfc334698132eb341044ccee322ccf8bcf3607cde1`。
+MediaPipe 原始碼採 Apache-2.0；官方模型依官方模型資源與使用條款使用。官方指南：https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker/python 。部署前確認組織適用條款。
+
+OpenCV（Apache-2.0）、NumPy（BSD-3-Clause）、python-socketio（MIT）、Pillow（HPND）、pytest（MIT）及其依賴的授權隨安裝套件保存；完整版本在 requirements-lock.txt。
+安裝時可下載，活動執行不下載模型。未提供離線套件安裝包，不複製 .venv 到其他電腦。
+
+</details>

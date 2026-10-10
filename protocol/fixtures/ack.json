@@ -1,0 +1,10 @@
+{
+  "ok": true,
+  "requestId": "fixture",
+  "protocolVersion": 1,
+  "roomCode": "ABC123",
+  "seat": "red",
+  "sessionId": "fixture",
+  "generation": 1,
+  "matchId": null
+}

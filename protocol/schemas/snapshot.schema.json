@@ -1,0 +1,92 @@
+{
+  "type": "object",
+  "required": [
+    "protocolVersion",
+    "roomId",
+    "roomCode",
+    "mode",
+    "phase",
+    "matchId",
+    "rulesVersion",
+    "aiVersion",
+    "snapshotSeq",
+    "players"
+  ],
+  "properties": {
+    "protocolVersion": {
+      "const": 1
+    },
+    "snapshotSeq": {
+      "type": "integer"
+    },
+    "matchId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "core": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "tick",
+        "actors",
+        "objects",
+        "elapsed",
+        "remaining",
+        "result"
+      ],
+      "properties": {
+        "tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "actors": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "required": [
+              "x",
+              "y",
+              "hp",
+              "qi",
+              "ground",
+              "loadout",
+              "cooldowns"
+            ],
+            "properties": {
+              "hp": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1000
+              },
+              "qi": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 6
+              },
+              "loadout": {
+                "type": "object",
+                "properties": {
+                  "ultimate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "objects": {
+          "type": "array"
+        }
+      }
+    }
+  }
+}

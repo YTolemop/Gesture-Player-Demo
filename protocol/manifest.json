@@ -1,0 +1,26 @@
+{
+  "protocolVersion": 1,
+  "sha256": "c169fc2d180779522e0c99d018e607c461258d996a44ea3494a24b7c6f71ca8e",
+  "files": [
+    "gesture_labels.json",
+    "schemas/input-state.schema.json",
+    "schemas/requests.schema.json",
+    "schemas/ack.schema.json",
+    "schemas/context.schema.json",
+    "schemas/snapshot.schema.json",
+    "schemas/result.schema.json",
+    "fixtures/inputs.json",
+    "fixtures/ack.json"
+  ],
+  "fileHashes": {
+    "gesture_labels.json": "5dd584fa2e6cbbcbc09361055e90d182945a198e0ff7f45469ce84530799adf0",
+    "schemas/input-state.schema.json": "9624d62b705e2cb2f4ed3a64be0db2979cf7e2602bdfef598c188d4ee6a887b8",
+    "schemas/requests.schema.json": "c72537a25814842c476e19474f2dc45198ef41d4971a7fe8184876f93126920a",
+    "schemas/ack.schema.json": "f9dc257647c80ae72d9589bbcb3c317ed01b7144f39472ebd18188b83c3d1a73",
+    "schemas/context.schema.json": "3fd13247dcbfc5898fed51b9a7748863c7f38e959582c6c8df8d30f608d932f1",
+    "schemas/snapshot.schema.json": "4813611af3969992fcc4a815d7f2c280ad8775dce98325378308b7c700348e9f",
+    "schemas/result.schema.json": "fd404c33a48e93b7f6edefd80145839ca753df83a6261927b38652bc5fc42d57",
+    "fixtures/inputs.json": "10149f11cdc425002e4992b1d1d3c7887381104ea6fab5dcbebd4618efa02072",
+    "fixtures/ack.json": "4083c6ae5f1487618e009bf09a5ed870e6c0c99bf63278cd38e2762c8d482ce6"
+  }
+}
