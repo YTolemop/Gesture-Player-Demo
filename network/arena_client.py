@@ -12,8 +12,14 @@ class ArenaClient:
         self.context={}; self.token=None; self.room=None; self.seq=0; self.lock=threading.RLock(); self.stop=threading.Event()
         self.sio.on('controller:context',self._context,namespace='/controller')
         self.sio.on('connect',self._connected,namespace='/controller')
-        self.sio.on('disconnect',lambda *args:self._disconnected(),namespace='/controller')
+        self.sio.on('disconnect',self._disconnected,namespace='/controller')
         self.thread=threading.Thread(target=self._send,daemon=True);self.thread.start()
+
+    @property
+    def paired(self):
+        with self.lock:
+            return bool(self.token and not self.stop.is_set() and self.sio.connected
+                        and '/controller' in self.sio.namespaces and self.context.get('sessionId'))
 
     def call(self,event,payload):
         result=self.sio.call(event,{**payload,'requestId':str(uuid.uuid4())},namespace='/controller',timeout=5)
@@ -24,30 +30,41 @@ class ArenaClient:
     def connect(self,server,room,pair_code,source='recognizer',algorithms=None):
         self.room=room;self.sio.connect(server,namespaces=['/controller'],socketio_path='socket.io')
         result=self.call('controller:pair',{'protocolVersion':1,'roomCode':room,'pairCode':pair_code,'source':source,'algorithms':algorithms or {}})
-        self.room=result['roomCode']
-        self.token=result['controllerToken']
         with self.lock:
+            if self.stop.is_set():
+                raise RuntimeError('配對已解除，請重新產生配對碼')
+            self.room=result['roomCode'];self.token=result['controllerToken']
             self.context={**self.context,**result};self.seq=0;self.pending_preview=None;self.last_preview=0.0
         self.router.clear();self.on_status(f"已配對 {result['seat']}，等待新 NONE 解除")
         return result
 
     def _connected(self):
-        if self.token:
+        with self.lock:
+            token,room=self.token,self.room
+        if token and not self.stop.is_set():
             def resume():
                 try:
-                    result=self.call('controller:resume',{'roomCode':self.room,'controllerToken':self.token})
-                    self._context(result);self.on_status('已重新配對，請在網站確認準備並恢復')
+                    result=self.call('controller:resume',{'roomCode':room,'controllerToken':token})
+                    with self.lock:
+                        if self.stop.is_set() or self.token!=token:return
+                        self._context(result);self.on_status('已重新配對，請在網站確認準備並恢復')
                 except Exception as exc:
-                    self.on_status(str(exc))
+                    self.close()
+                    self.on_status(f'恢復配對失敗：{exc}；請重新產生配對碼')
             threading.Thread(target=resume,daemon=True).start()
 
-    def _disconnected(self):
+    def _disconnected(self, reason=None):
+        terminal=reason in (socketio.Client.reason.SERVER_DISCONNECT,socketio.Client.reason.CLIENT_DISCONNECT) or self.stop.is_set()
         with self.lock:
             self.context={};self.pending_preview=None;self.last_preview=0.0
-        self.router.clear();self.reset();self.on_status('已斷線，安全解除；等待重新連線')
+            if terminal:
+                self.token=None;self.room=None;self.stop.set()
+        self.router.clear();self.reset()
+        self.on_status('已解除配對，請重新產生配對碼' if terminal else '連線中斷，已停止輸出；等待重新連線')
 
     def _context(self,v):
         with self.lock:
+            if self.stop.is_set():return
             old=self.context
             changed=any(old.get(k)!=v.get(k) for k in ('matchId','sessionId','generation','phase'))
             self.context={**old,**v}
@@ -103,17 +120,17 @@ class ArenaClient:
                 self.on_status(str(exc))
 
     def availability(self,**flags):
-        if self.sio.connected:
+        if self.paired:
             return self.call('controller:availability',flags)
 
     def close(self):
         self.router.clear()
         self.stop.set()
-        with self.lock:self.pending_preview=None
+        with self.lock:
+            c=dict(self.context)
+            self.token=None;self.room=None;self.context={};self.pending_preview=None;self.last_preview=0.0
         self.thread.join(timeout=2)
         if self.sio.connected:
-            with self.lock:
-                c=dict(self.context)
             if c.get('sessionId'):
                 try:
                     self.sio.emit('input:state',{'protocolVersion':1,'sessionId':c['sessionId'],'matchId':c.get('matchId'),'generation':c.get('generation',1),'seq':self.seq,'gesture':'NONE'},namespace='/controller')

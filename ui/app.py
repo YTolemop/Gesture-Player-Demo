@@ -185,7 +185,7 @@ class App:
 
     def sync_availability(self):
         client=self.client
-        if not client or not client.token:return
+        if not client or not client.paired:return
         flags=self.flags();signature=(client,tuple(flags.items()))
         if signature==self.sent_availability:return
         try:
@@ -261,7 +261,7 @@ class App:
 
     def toggle_pair(self):
         if self.pair_busy:return
-        if self.client and self.client.token:self.disconnect()
+        if self.client and self.client.paired:self.disconnect()
         else:self.connect()
 
     def connect(self):
@@ -288,7 +288,7 @@ class App:
         self.background(run)
 
     def render(self):
-        self.pair_button.config(text='解除配對' if self.client and self.client.token else '配對',state='disabled' if self.pair_busy else 'normal')
+        self.pair_button.config(text='解除配對' if self.client and self.client.paired else '配對',state='disabled' if self.pair_busy else 'normal')
         self.counts.config(text=f'有效 {len(self.samples)} 筆')
         expected='左手／右手／雙手皆可，可混合採集於同一模型'
         countdown=f'倒數 {max(0,self.record_start-time.monotonic()):.1f} 秒' if self.recording and time.monotonic()<self.record_start else ('錄製中' if self.recording else self.capture_reason or '可採集原始關鍵點')
