@@ -102,6 +102,8 @@ class App:
             last=timestamp;start=time.monotonic()
             try:
                 sample=self.landmarks.detect(frame,timestamp,self.camera.actual);sample.batch=self.record_batch
+                client=self.client
+                if client:client.preview(frame,sample)
                 tracked,reason=raw_valid(sample,self.config);result=None;pred=None
                 self.capture_reason=reason
                 self.hand_status='、'.join(name for name,hand in [('左手',sample.left),('右手',sample.right)] if hand is not None) or '無手（或左右手判定可信度不足）'

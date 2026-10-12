@@ -11,10 +11,6 @@ def raw_valid(sample: RawHandSample, config: dict) -> tuple[bool, str]:
         return False, '擷取契約不相容'
     if sample.width <= 0 or sample.height <= 0:
         return False, '影像尺寸無效'
-    if sample.left is not None:
-        return False, '只能使用右手，請將左手移出畫面'
-    if sample.right is None:
-        return False, '未偵測到右手'
     slots = [sample.left, sample.right]
     if not any(v is not None for v in slots):
         return False, '無手'
@@ -39,13 +35,12 @@ def feature(sample, config, normalizer=None):
         if result.features is not None:
             raise ValueError('無效特徵必须為 None')
         return result
-    d = 63
-    if result.featureVersion != config['feature_version'] or not isinstance(result.features, np.ndarray) or result.features.shape != (d,) or result.features.dtype != np.float32 or not np.isfinite(result.features).all():
+    if result.featureVersion != config['feature_version'] or not isinstance(result.features, np.ndarray) or result.features.ndim != 1 or not result.features.size or result.features.dtype != np.float32 or not np.isfinite(result.features).all():
         raise ValueError('正規化輸出版本／維度／float32／有限值不符接口')
     return result
 
 def validate_prediction(pred):
-    if not isinstance(pred, Prediction) or pred.label not in LABELS or not np.isfinite(pred.vote_ratio) or not 0 <= pred.vote_ratio <= 1:
+    if not isinstance(pred, Prediction) or not isinstance(pred.label, str) or pred.label not in LABELS or not np.isfinite(pred.vote_ratio) or not 0 <= pred.vote_ratio <= 1:
         raise ValueError('StudentKNN.predict 的 Prediction 無效')
     if pred.nearest_distance is not None and (not np.isfinite(pred.nearest_distance) or pred.nearest_distance < 0):
         raise ValueError('nearest_distance 必須非負有限值或 None')

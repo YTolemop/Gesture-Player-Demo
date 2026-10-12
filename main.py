@@ -9,7 +9,12 @@ ROOT=Path(__file__).resolve().parent
 def config():
     path=ROOT/'config.json'
     settings=json.loads((path if path.exists() else ROOT/'config.example.json').read_text(encoding='utf-8'))
-    settings.update(hand_mode='single',single_hand='right',mirror_left=False,feature_version='right-hand-normalization-v2')
+    # Hand availability is per sample; never force a single-hand mode.
+    for key in ('hand_mode', 'single_hand', 'mirror_left'):
+        settings.pop(key, None)
+    settings.setdefault('feature_version', 'hands-normalization-v3')
+    if not isinstance(settings['feature_version'], str) or not settings['feature_version'].strip():
+        raise ValueError('feature_version 必須為非空字串')
     return settings
 
 def main():

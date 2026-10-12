@@ -1,5 +1,6 @@
 {
-  "format": 1,
+  "format": 2,
+  "feature_dimension": 63,
   "labels": [
     "MOVE_LEFT",
     "MOVE_RIGHT",
@@ -14,11 +15,8 @@
     "NONE"
   ],
   "config": {
-    "hand_mode": "single",
-    "single_hand": "right",
     "swap_handedness": true,
-    "mirror_left": false,
-    "feature_version": "right-hand-normalization-v2",
+    "feature_version": "hands-normalization-v3",
     "k": 5,
     "distance_threshold": 1.0,
     "vote_threshold": 0.6

@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 
 CAPTURE_VERSION = 'image-mirrored-v1'
-FEATURE_VERSION = 'student-normalization-v1'
+FEATURE_VERSION = 'hands-normalization-v3'
 
 @dataclass
 class RawHandSample:

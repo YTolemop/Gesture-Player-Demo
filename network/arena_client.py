@@ -2,11 +2,13 @@ import threading
 import time
 import uuid
 import socketio
+from network.preview import encode_preview
 
 class ArenaClient:
     def __init__(self, router, on_status=lambda _: None, reset=lambda: None):
         self.router, self.on_status, self.reset = router, on_status, reset
         self.sio=socketio.Client(reconnection=True, logger=False, engineio_logger=False)
+        self.pending_preview=None; self.last_preview=0.0
         self.context={}; self.token=None; self.room=None; self.seq=0; self.lock=threading.RLock(); self.stop=threading.Event()
         self.sio.on('controller:context',self._context,namespace='/controller')
         self.sio.on('connect',self._connected,namespace='/controller')
@@ -25,7 +27,7 @@ class ArenaClient:
         self.room=result['roomCode']
         self.token=result['controllerToken']
         with self.lock:
-            self.context={**self.context,**result};self.seq=0
+            self.context={**self.context,**result};self.seq=0;self.pending_preview=None;self.last_preview=0.0
         self.router.clear();self.on_status(f"已配對 {result['seat']}，等待新 NONE 解除")
         return result
 
@@ -41,7 +43,7 @@ class ArenaClient:
 
     def _disconnected(self):
         with self.lock:
-            self.context={}
+            self.context={};self.pending_preview=None;self.last_preview=0.0
         self.router.clear();self.reset();self.on_status('已斷線，安全解除；等待重新連線')
 
     def _context(self,v):
@@ -52,7 +54,30 @@ class ArenaClient:
             if old.get('sessionId')!=v.get('sessionId'):
                 self.seq=0
             if changed:
+                self.pending_preview=None;self.last_preview=0.0
                 self.router.clear();self.reset()
+
+    def preview(self, frame, sample):
+        # Encoding is throttled; network sends run on the existing sender thread.
+        if self.stop.is_set() or not self.sio.connected or '/controller' not in self.sio.namespaces:
+            return
+        now=time.monotonic()
+        with self.lock:
+            c=dict(self.context)
+            if not c.get('sessionId') or c.get('source')!='recognizer' or now-self.last_preview<.15:
+                return
+            self.last_preview=now
+        try:
+            payload=encode_preview(frame, sample)
+        except Exception:
+            return  # Preview failures must never interrupt gesture recognition.
+        if payload is None:
+            return
+        payload.update(protocolVersion=1, sessionId=c['sessionId'], generation=c.get('generation',1))
+        with self.lock:
+            if self.stop.is_set() or any(self.context.get(k)!=c.get(k) for k in ('sessionId','generation','phase','source')):
+                return
+            self.pending_preview=payload
 
     def _send(self):
         last_heartbeat=0
@@ -66,6 +91,12 @@ class ArenaClient:
                 v={'protocolVersion':1,'sessionId':c['sessionId'],'matchId':c.get('matchId'),'generation':c.get('generation',1),'seq':self.seq,'gesture':self.router.read()};self.seq+=1
             try:
                 self.sio.emit('input:state',v,namespace='/controller')
+                with self.lock:
+                    preview=self.pending_preview;self.pending_preview=None
+                    if preview and (preview['sessionId']!=self.context.get('sessionId') or preview['generation']!=self.context.get('generation') or self.context.get('source')!='recognizer'):
+                        preview=None
+                if preview:
+                    self.sio.emit('camera:frame',preview,namespace='/controller')
                 if time.monotonic()-last_heartbeat>=.5:
                     self.sio.emit('client:heartbeat',{},namespace='/controller');last_heartbeat=time.monotonic()
             except Exception as exc:
@@ -77,7 +108,9 @@ class ArenaClient:
 
     def close(self):
         self.router.clear()
-        self.stop.set();self.thread.join(timeout=2)
+        self.stop.set()
+        with self.lock:self.pending_preview=None
+        self.thread.join(timeout=2)
         if self.sio.connected:
             with self.lock:
                 c=dict(self.context)

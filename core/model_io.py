@@ -7,8 +7,8 @@ from core.labels import LABELS
 from student.knn import StudentKNN
 
 def validate_training(x, y, config):
-    if x.ndim!=2 or not len(x) or x.shape[1]!=63 or x.dtype!=np.float32 or not np.isfinite(x).all():
-        raise ValueError('訓練特徵必須為非空有限 float32 (N,63)')
+    if x.ndim!=2 or not len(x) or x.shape[1]<1 or x.dtype!=np.float32 or not np.isfinite(x).all():
+        raise ValueError('訓練特徵必須為非空有限 float32 (N,D)，D 為一致的正整數')
     if y.shape!=(len(x),) or not np.issubdtype(y.dtype,np.integer) or ((y<0)|(y>9)).any():
         raise ValueError('訓練標籤必須為整數 0..9')
     k=config.get('k',5)
@@ -27,6 +27,8 @@ def features_from(paths, config, purpose):
         for sample, label in zip(samples, labels):
             result = feature(sample, config)
             if result.valid:
+                if x and result.features.shape != x[0].shape:
+                    raise ValueError('同一模型的特徵維度必須一致；請以固定欄位表示缺手並重新訓練')
                 x.append(result.features); y.append(label)
             else:
                 rejected += 1
@@ -35,21 +37,33 @@ def features_from(paths, config, purpose):
     return np.asarray(x,dtype=np.float32), np.asarray(y,dtype=np.int64), rejected
 
 def save_model(path, x, y, config):
+    validate_training(x, y, config)
     path = Path(path); path.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(path, features=x, labels=y)
-    path.with_suffix('.json').write_text(json.dumps({'format':1,'labels':LABELS,'config':{k:v for k,v in config.items() if k!='filter_enabled'}},ensure_ascii=False,indent=2),encoding='utf-8')
+    path.with_suffix('.json').write_text(json.dumps({'format':2,'feature_dimension':int(x.shape[1]),'labels':LABELS,'config':{k:v for k,v in config.items() if k!='filter_enabled'}},ensure_ascii=False,indent=2),encoding='utf-8')
+
+class CheckedModel:
+    """Guard live and test inputs before calling student code."""
+    def __init__(self, model, dimension):
+        self.model = model
+        self.feature_dimension = dimension
+
+    def predict(self, features):
+        if not isinstance(features, np.ndarray) or features.shape != (self.feature_dimension,) or features.dtype != np.float32 or not np.isfinite(features).all():
+            raise ValueError('辨識特徵與模型維度／格式不相容，請重新訓練')
+        return self.model.predict(features)
 
 def load_model(path, config):
     path=Path(path); meta=json.loads(path.with_suffix('.json').read_text(encoding='utf-8'))
-    if meta != {'format':1,'labels':LABELS,'config':{k:v for k,v in config.items() if k!='filter_enabled'}}:
-        raise ValueError('模型與特徵／手模式／標籤／設定版本不相容，請重算並訓練')
+    d=meta.get('feature_dimension')
+    if type(d) is not int or d<1 or meta != {'format':2,'feature_dimension':d,'labels':LABELS,'config':{k:v for k,v in config.items() if k!='filter_enabled'}}:
+        raise ValueError('模型與特徵／標籤／設定版本不相容，請重算並訓練')
     with np.load(path, allow_pickle=False) as data:
         x, y = data['features'], data['labels']
-    d=63
     if x.ndim!=2 or x.shape[1]!=d or y.shape!=(len(x),) or x.dtype!=np.float32 or not np.isfinite(x).all() or not np.issubdtype(y.dtype,np.integer) or ((y<0)|(y>9)).any():
         raise ValueError('模型資料格式無效')
     validate_training(x,y,config)
-    model=StudentKNN(); model.fit(x,y,config); return model
+    model=StudentKNN(); model.fit(x,y,config); return CheckedModel(model,d)
 
 def train(paths, path, config):
     x,y,rejected=features_from(paths,config,'train'); validate_training(x,y,config); model=StudentKNN(); model.fit(x,y,config); save_model(path,x,y,config)

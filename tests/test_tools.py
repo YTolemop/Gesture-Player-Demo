@@ -7,7 +7,7 @@ from core.features import feature, raw_valid, OutputRouter, validate_prediction
 from core.dataset import save_batch, read_batch
 from core.resources import verify_model
 
-CONFIG={'hand_mode':'single','single_hand':'right','feature_version':'student-normalization-v1'}
+CONFIG={'feature_version':'hands-normalization-v3'}
 def sample():
     hand=np.zeros((21,3),dtype=np.float32);hand[9]=[.1,.1,0]
     return RawHandSample(None,hand,640,480,time.monotonic())
@@ -28,7 +28,7 @@ def test_raw_safety_and_scale():
 
 def test_feature_guard_invalid_shape_and_nan():
     class Bad:
-        def transform(self,*_):return FeatureResult(True,np.zeros(128,dtype=np.float32))
+        def transform(self,*_):return FeatureResult(True,np.zeros((2,63),dtype=np.float32))
     with pytest.raises(ValueError):feature(sample(),CONFIG,Bad())
 
 def test_output_no_hand_and_unfinished_filter():
