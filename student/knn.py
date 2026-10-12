@@ -13,6 +13,8 @@ class StudentKNN:
         return None
 
     def predict(self, features):
+        if features.shape != (self.training_features.shape[1],):
+            raise ValueError('辨識特徵維度與模型不相容，請重算並訓練')
         differences = self.training_features - features
         distances = np.linalg.norm(differences, axis=1)
 

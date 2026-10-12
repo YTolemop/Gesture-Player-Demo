@@ -1,6 +1,6 @@
 {
   "format": 2,
-  "feature_dimension": 63,
+  "feature_dimension": 131,
   "labels": [
     "MOVE_LEFT",
     "MOVE_RIGHT",
@@ -16,7 +16,7 @@
   ],
   "config": {
     "swap_handedness": true,
-    "feature_version": "hands-normalization-v3",
+    "feature_version": "mixed-hands-131-v1",
     "k": 5,
     "distance_threshold": 1.0,
     "vote_threshold": 0.6

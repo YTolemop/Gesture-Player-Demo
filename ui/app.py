@@ -20,10 +20,13 @@ CONNECTIONS=[(0,1),(1,2),(2,3),(3,4),(0,5),(5,6),(6,7),(7,8),(5,9),(9,10),(10,11
 
 class App:
     def __init__(self,config):
-        self.config=config;self.root=tk.Tk();self.root.title('手勢訓練器');self.root.geometry('1150x850')
+        self.config=config;self.root=tk.Tk();self.root.title('手勢訓練器')
+        self.root.geometry(f'{min(1150,self.root.winfo_screenwidth()-80)}x{min(850,self.root.winfo_screenheight()-100)}')
+        self.root.minsize(720,480)
         self.router=OutputRouter();self.camera=None;self.landmarks=None;self.model=None;self.client=None
         self.running=threading.Event();self.image_lock=threading.Lock();self.latest=None;self.notice='開啟鏡頭預覽；正規化與KNN必做，濾波選做。'
         self.algorithm_status={'normalization':False,'knn':False,'filter':False};self.recording=False;self.samples=[];self.labels=[];self.record_start=0;self.last_record=0;self.feature_count=0
+        self.record_lock=threading.Lock();self.record_pending=False
         self.filter_enabled=False;self.mode='preview';self.raw_result=None;self.record_label=0;self.record_batch='batch-01';self.record_purpose='train';self.worker=None
         self.capture_reason='鏡頭尚未開啟';self.hand_status='尚未偵測'
         self.normalization_reason=''
@@ -43,7 +46,21 @@ class App:
         preview_area=ttk.Frame(preview);preview_area.pack(fill='both',expand=True,pady=10)
         self.preview=ttk.Label(preview_area,text='鏡頭尚未開啟',anchor='center');self.preview.place(relwidth=1,relheight=1)
         data_page=data
-        data=ttk.Frame(data_page);data.pack(side='left',fill='y',padx=(0,16))
+        controls=ttk.Frame(data_page);controls.pack(side='left',fill='y',padx=(0,16))
+        actions=ttk.Frame(controls);actions.pack(side='bottom',fill='x',pady=(8,0))
+        self.training_buttons=[]
+        for title,fn in [('訓練',self.train),('測試',self.evaluate),('載入KNN模型',self.load)]:
+            button=ttk.Button(actions,text=title,command=lambda fn=fn,title=title:self.background(fn,title))
+            button.pack(side='left',padx=(0,4));self.training_buttons.append(button)
+        scroll_area=ttk.Frame(controls);scroll_area.pack(fill='both',expand=True)
+        canvas=tk.Canvas(scroll_area,width=390,highlightthickness=0)
+        scrollbar=ttk.Scrollbar(scroll_area,orient='vertical',command=canvas.yview)
+        scrollbar.pack(side='right',fill='y');canvas.pack(side='left',fill='both',expand=True)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        data=ttk.Frame(canvas);content=canvas.create_window((0,0),window=data,anchor='nw')
+        data.bind('<Configure>',lambda _:canvas.configure(scrollregion=canvas.bbox('all')))
+        canvas.bind('<Configure>',lambda event:canvas.itemconfigure(content,width=event.width))
+        self.capture_controls=canvas
         capture=ttk.LabelFrame(data_page,text='採集即時預覽',padding=10);capture.pack(side='right',fill='both',expand=True)
         self.capture_status=ttk.Label(capture,text='',wraplength=420);self.capture_status.pack(anchor='w',pady=5)
         ttk.Label(capture,text='可錄左手、右手或雙手；同一類保持相同手勢與手數，每次只對應一個動作。',wraplength=420).pack(side='bottom',anchor='w',pady=(10,0))
@@ -56,16 +73,14 @@ class App:
         record_bar=ttk.Frame(data);record_bar.pack(anchor='w',pady=5)
         ttk.Button(record_bar,text='開始錄製',command=self.begin_record).pack(side='left')
         ttk.Label(record_bar,text='倒數三秒後開始',foreground='black').pack(side='left',padx=10)
-        ttk.Button(data,text='停止錄製',command=self.save_record).pack(anchor='w',pady=5)
+        self.stop_record_button=ttk.Button(data,text='停止錄製',command=self.save_record,state='disabled')
+        self.stop_record_button.pack(anchor='w',pady=5)
         self.counts=ttk.Label(data,text='有效 0 筆');self.counts.pack(anchor='w',pady=5)
         ttk.Label(data,text='錄製資料').pack(anchor='w',pady=10)
         self.files=ttk.Treeview(data,columns=('label','purpose','count','time'),show='headings',height=8,selectmode='browse')
         for key,title,width in [('label','類別',150),('purpose','用途',55),('count','筆數',50),('time','錄製時間',130)]:
             self.files.heading(key,text=title);self.files.column(key,width=width,stretch=False)
         self.files.pack(anchor='w');ttk.Button(data,text='刪除所選資料',command=self.delete_batch).pack(anchor='w',pady=5)
-        ttk.Button(data,text='訓練',command=lambda:self.background(self.train,'訓練')).pack(anchor='w',pady=5)
-        ttk.Button(data,text='測試',command=lambda:self.background(self.evaluate,'測試')).pack(anchor='w',pady=5)
-        ttk.Button(data,text='載入KNN模型',command=lambda:self.background(self.load,'載入KNN模型')).pack(anchor='w',pady=5)
         self.server_var=tk.StringVar(value='http://127.0.0.1:3000');self.room_var=tk.StringVar();self.pair_var=tk.StringVar()
         for title,var in [('主機網址（其他筆電使用主機區網IP）',self.server_var),('房間碼（選填，單人留空）',self.room_var),('一次性配對碼',self.pair_var)]:
             ttk.Label(connect,text=title).pack(anchor='w',pady=5);ttk.Entry(connect,textvariable=var,width=60).pack(anchor='w')
@@ -127,9 +142,10 @@ class App:
                 elif self.filter_enabled and pred:self.algorithm_status['filter']=True
                 self.sync_availability()
                 now=time.monotonic()
-                if self.recording and now>=self.record_start and now-self.last_record>=.1 and tracked:
-                    self.samples.append(sample);self.labels.append(self.record_label);self.last_record=now
-                    if result and result.valid:self.feature_count+=1
+                with self.record_lock:
+                    if self.recording and now>=self.record_start and now-self.last_record>=.1 and tracked:
+                        self.samples.append(sample);self.labels.append(self.record_label);self.last_record=now
+                        if result and result.valid:self.feature_count+=1
                 for hand in (sample.left,sample.right):
                     if hand is None:continue
                     points=[(int(p[0]*sample.width),int(p[1]*sample.height)) for p in hand]
@@ -181,17 +197,29 @@ class App:
     def begin_record(self):
         if not self.camera:messagebox.showinfo('請開鏡頭','先在關鍵點頁開啟鏡頭。');return
         if self.recording:messagebox.showinfo('錄製中','先停止並保存。');return
-        self.record_purpose=self.purpose_var.get();self.record_label=LABELS.index(self.class_var.get());self.samples=[];self.labels=[];self.feature_count=0;self.record_start=time.monotonic()+3;self.last_record=0
-        if self.record_label==10:self.record_purpose='test';self.purpose_var.set('test')
-        self.record_batch=f'{self.record_purpose}-{time.time_ns()}'
-        self.recording=True
+        if self.record_pending:messagebox.showinfo('尚未保存','請先按停止錄製，重試保存上一批資料。');return
+        with self.record_lock:
+            self.record_purpose=self.purpose_var.get();self.record_label=LABELS.index(self.class_var.get());self.samples=[];self.labels=[];self.feature_count=0;self.record_start=time.monotonic()+3;self.last_record=0
+            if self.record_label==10:self.record_purpose='test';self.purpose_var.set('test')
+            self.record_batch=f'{self.record_purpose}-{time.time_ns()}'
+            self.recording=True;self.record_pending=True
+        self.stop_record_button.config(state='normal')
 
     def save_record(self):
-        self.recording=False
-        if not self.samples:
+        with self.record_lock:
+            if not self.record_pending:return
+            self.recording=False
+            samples,labels=list(self.samples),list(self.labels)
+        if not samples:
+            self.record_pending=False;self.stop_record_button.config(state='disabled')
             messagebox.showinfo('沒有有效樣本',f'本次沒有收進有效樣本。\n目前偵測：{self.hand_status}\n採集狀態：{self.capture_reason or "目前可採集"}\n可使用左手、右手或雙手。\n\n確認入鏡的手有完整關鍵點，倒數結束後「有效」筆數持續增加再保存。\n正規化尚未完成不會阻止原始資料採集。');return
         path=ROOT/'data'/f'{self.record_batch}-{self.record_label}-{time.time_ns()}.npz'
-        save_batch(path,list(self.samples),list(self.labels),self.record_purpose,dict(self.config));self.notice=f'已保存 {len(self.samples)} 筆原始關鍵點';self.refresh_files()
+        try:
+            save_batch(path,samples,labels,self.record_purpose,dict(self.config))
+        except Exception as exc:
+            messagebox.showerror('保存失敗',f'{exc}\n資料仍保留，請再次按停止錄製重試。');return
+        self.record_pending=False;self.stop_record_button.config(state='disabled')
+        self.notice=f'已保存 {len(samples)} 筆原始關鍵點';self.refresh_files()
 
     def refresh_files(self):
         self.files.delete(*self.files.get_children());self.batch_paths={}

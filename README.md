@@ -402,13 +402,15 @@ class StudentKNN:
         )
 ```
 
-### C. 濾波：新分類持續一段時間才輸出（選做）
+### C. 濾波：快速確認新手勢，略過短暫跳動（選做）
 
 先保持濾波關閉，確認KNN能辨識後再做。假設連續結果是「JUMP、JUMP、BLOCK、JUMP」，中間短暫的BLOCK可能只是抖動；每次分類一變就輸出，角色也會跟著跳動。
 
-這裡示範一個容易實作的策略：**同一候選標籤持續至少0.15秒，才開始輸出；候選改變時先回NONE，重新等待。** 這會增加一點延遲，也可能讓很短的手勢無法通過，可以在實測後調整等待時間。
+但如果每次換手勢都要等很久，玩家會覺得動作慢半拍。這裡使用**短時間加上連續次數確認**：新手勢至少連續兩次一致，最近連續兩次的投票比例都達0.8時，使用20ms門檻；其他結果使用50ms門檻。已確認的手勢可以持續輸出，短暫跳到另一個有效類別時最多保留原動作50ms；未知分類或無手時立即停止。
 
-#### 第1步：保存候選標籤與開始時間
+20ms與50ms是濾波的確認門檻，不是整個系統的反應時間。程式要等下一筆分類到來才能確認；鏡頭更新率、關鍵點偵測和網路傳送都會影響實際速度。
+
+#### 第1步：分清楚候選與穩定輸出
 
 濾波每次收到的是KNN回傳的 `prediction`，不是21個座標：
 
@@ -416,84 +418,201 @@ class StudentKNN:
 |---|---|
 | `prediction.label` | 這次分類的標籤，例如 `JUMP` |
 | `prediction.valid` | KNN是否接受這次分類 |
+| `prediction.vote_ratio` | 最近鄰投給勝出類別的比例，例如0.8表示八成；不是辨識正確率 |
 | `timestamp` | 這次更新的單調遞增時鐘秒數，不是影格編號或日期 |
 
-需要跨次保存的資料有：
+先在 `__init__` 設定三個門檻，再呼叫 `reset()` 初始化狀態：
 
 ```python
-self.candidate = None
-self.start_time = None
+self.hold_seconds = 0.05
+self.fast_hold_seconds = 0.02
+self.strong_vote = 0.8
+self.reset()
 ```
 
-`candidate` 記錄正在觀察的標籤；`start_time` 記錄第一次看到它的時間。這些要放在 `self` 上，下一次呼叫才能接著計算。
+`hold_seconds` 是一般確認時間，也用來限制保留舊動作的時間；`fast_hold_seconds` 是高投票比例的確認時間；`strong_vote` 是使用快速確認的投票門檻。
 
-#### 第2步：無效分類立即停止輸出
+在 `reset()` 保存以下資料，下一次更新才能接著判斷：
+
+| 狀態 | 用途 |
+|---|---|
+| `candidate` | 正在確認的新標籤，初始為None |
+| `start_time` | 第一次看到目前候選的時間，初始為None |
+| `frames` | 目前候選連續出現幾次，初始為0 |
+| `strong_frames` | 目前候選最近連續幾次達到投票門檻，初始為0 |
+| `stable_label` | 已確認、可以輸出的標籤，初始為NONE |
+| `transition_start` | 開始離開穩定標籤的時間，初始為None |
+| `last_timestamp` | 上一筆更新時間，初始為None |
+
+`candidate` 和 `stable_label` 分開保存。例如已確認JUMP，接著只收到一次BLOCK：BLOCK是候選，但還不能直接把穩定輸出改成BLOCK。
+
+#### 第2步：無效分類立即停止，舊資料不接著算
 
 ```python
-if not prediction.valid or prediction.label == 'NONE':
+if not math.isfinite(timestamp) or not prediction.valid or prediction.label == 'NONE':
     self.reset()
     return 'NONE'
 ```
 
-未知分類不能延續上一個攻擊，所以要清除候選和計時，立即回傳NONE。
+未知分類不能延續上一個攻擊，所以要清除候選與穩定輸出，立即回傳NONE。`math.isfinite` 也會擋下無效時間值，檔案開頭記得加入 `import math`。無手時，共用工具會直接停止輸出並重設濾波，不會等待確認時間。
 
-#### 第3步：標籤改變時，重新計時
+另外，時間倒退、重複使用同一時間，或兩筆更新相隔超過0.5秒，都不能把前一筆資料當成連續證據：
+
+```python
+if self.last_timestamp is not None and (timestamp <= self.last_timestamp or timestamp - self.last_timestamp > 0.5):
+    self.reset()
+self.last_timestamp = timestamp
+```
+
+例如鏡頭暫停後重新送來JUMP，必須重新確認，不能直接沿用暫停前的JUMP。
+
+#### 第3步：已確認的手勢，直接繼續輸出
+
+```python
+if prediction.label == self.stable_label:
+    self.candidate = None
+    self.transition_start = None
+    return self.stable_label
+```
+
+第一次看到JUMP時還沒有穩定輸出，需要往下確認；確認後，只要仍收到有效的JUMP，就直接回傳JUMP，不必每筆再等一次。
+
+如果上一筆短暫變成BLOCK，這一筆又回到穩定的JUMP，也會清掉BLOCK候選及切換計時。這樣單次分類跳動就不會把動作切開。
+
+#### 第4步：計算候選連續次數與投票比例
 
 ```python
 if prediction.label != self.candidate:
     self.candidate = prediction.label
     self.start_time = timestamp
-    return 'NONE'
+    self.frames = 1
+    self.strong_frames = int(prediction.vote_ratio >= self.strong_vote)
+else:
+    self.frames += 1
+    self.strong_frames = self.strong_frames + 1 if prediction.vote_ratio >= self.strong_vote else 0
 ```
 
-第一次收到標籤也會進入這段，因為初始候選是None。先記錄標籤和時間，暫時不輸出動作。
+候選改變時，從第一次開始計數。`int(True)` 是1，`int(False)` 是0，因此第一筆達到0.8就把 `strong_frames` 設成1，否則設成0。
 
-#### 第4步：同一標籤持續夠久，就輸出
+候選相同時，`frames` 加1；投票比例達到門檻，`strong_frames` 才繼續累加。只要某次投票比例不足，就把高投票比例的連續次數歸零，但仍保留同一候選的一般次數與開始時間。
+
+例如JUMP的投票比例依序為「0.6、1.0」，雖然標籤連續一致，仍不能使用快速門檻，因為只有最近一次達到0.8。
+
+#### 第5步：次數與時間都通過，才確認新手勢
 
 ```python
 elapsed = timestamp - self.start_time
-if elapsed >= self.hold_seconds:
-    return self.candidate
+hold = self.fast_hold_seconds if self.strong_frames >= 2 else self.hold_seconds
+if self.frames >= 2 and elapsed >= hold:
+    self.stable_label = self.candidate
+    self.transition_start = None
+    return self.stable_label
+```
+
+這裡有兩個條件：**同一候選至少連續兩次，而且從候選開始到現在已達到確認時間。** 單筆結果就算投票比例是1.0，也不能直接通過。
+
+假設鏡頭每秒更新30次，兩筆約相隔33ms：
+
+| 時間 | 分類與投票比例 | 輸出 |
+|---|---|---|
+| 12.000秒 | JUMP，0.8 | NONE，先記錄候選 |
+| 12.033秒 | JUMP，0.8 | JUMP，連續兩次且超過20ms |
+| 12.066秒 | JUMP，0.8 | JUMP，已確認，直接延續 |
+
+如果每筆的投票比例都是0.6，第二筆只有33ms，還沒達到一般50ms門檻；第三筆約66ms才會通過。更新率較高時，也可能需要超過兩筆才能累積20ms，所以不能只用影格數來代替時間。
+
+#### 第6步：短暫跳動保留舊動作，但不能一直保留
+
+新候選還沒確認時，如果之前已有穩定輸出，就給短暫跳動一個小空檔：
+
+```python
+if self.stable_label != 'NONE':
+    if self.transition_start is None:
+        self.transition_start = timestamp
+    if timestamp - self.transition_start < self.hold_seconds:
+        return self.stable_label
 return 'NONE'
 ```
 
-例如第一次看到JUMP的時間是12.00秒，下一次仍是JUMP且時間為12.16秒，已經持續0.16秒，就能通過0.15秒門檻。
+例如已確認JUMP，接著只有一次BLOCK，再回到JUMP：短暫的BLOCK期間先回傳原本的JUMP，回到JUMP後繼續輸出。若BLOCK連續出現並通過確認，就改成BLOCK。
 
-這裡的「持續」是指每次收到的分類都相同；中間只要變成別的類別或無效結果，就重新計時。穩定後會持續回傳該標籤，不是只回傳一次。
+`transition_start` 只在第一次離開穩定標籤時設定，不能每次候選改變就重算。否則候選一直在BLOCK、CROUCH、MOVE_RIGHT之間跳動，舊的MOVE_LEFT可能永遠停不下來。從開始切換滿50ms的那筆更新起，若仍沒確認新候選，就回NONE；沒有新更新時，共用輸出也會在0.5秒後失效。
+
+這段只保留**有效分類之間的短暫跳動**。收到未知分類或手離開畫面，仍由第2步或共用工具立即停止，不會保留舊動作。
 
 #### 濾波完整實作
 
-把以下邏輯放進 `student/filtering.py`，**沿用原有類別名稱與函式簽名**。下面以 `StudentFilter` 示範；若原檔已有 `__init__`，將初始化內容合併進去：
+以下整段放進 `student/filtering.py`，**沿用原有類別名稱與函式簽名**。不要在同一類別中留下兩份 `update` 或 `reset`：
 
 ```python
+import math
 from core.types import Prediction
 
 
 class StudentFilter:
     def __init__(self):
-        self.hold_seconds = 0.15
+        self.hold_seconds = 0.05
+        self.fast_hold_seconds = 0.02
+        self.strong_vote = 0.8
         self.reset()
 
     def reset(self):
         self.candidate = None
         self.start_time = None
+        self.frames = 0
+        self.strong_frames = 0
+        self.stable_label = 'NONE'
+        self.transition_start = None
+        self.last_timestamp = None
         return None
 
     def update(self, prediction: Prediction, timestamp: float) -> str:
-        if not prediction.valid or prediction.label == 'NONE':
+        if not math.isfinite(timestamp) or not prediction.valid or prediction.label == 'NONE':
             self.reset()
             return 'NONE'
+
+        # 暫停或時間重設後，不能沿用舊影格的確認結果。
+        if self.last_timestamp is not None and (timestamp <= self.last_timestamp or timestamp - self.last_timestamp > 0.5):
+            self.reset()
+        self.last_timestamp = timestamp
+
+        if prediction.label == self.stable_label:
+            self.candidate = None
+            self.transition_start = None
+            return self.stable_label
 
         if prediction.label != self.candidate:
             self.candidate = prediction.label
             self.start_time = timestamp
-            return 'NONE'
+            self.frames = 1
+            self.strong_frames = int(prediction.vote_ratio >= self.strong_vote)
+        else:
+            self.frames += 1
+            self.strong_frames = self.strong_frames + 1 if prediction.vote_ratio >= self.strong_vote else 0
 
         elapsed = timestamp - self.start_time
-        if elapsed >= self.hold_seconds:
-            return self.candidate
+        hold = self.fast_hold_seconds if self.strong_frames >= 2 else self.hold_seconds
+        if self.frames >= 2 and elapsed >= hold:
+            self.stable_label = self.candidate
+            self.transition_start = None
+            return self.stable_label
+
+        # 短暫有效分類跳動時保留原動作，但切換計時不能一直重來。
+        if self.stable_label != 'NONE':
+            if self.transition_start is None:
+                self.transition_start = timestamp
+            if timestamp - self.transition_start < self.hold_seconds:
+                return self.stable_label
         return 'NONE'
 ```
+
+#### 實測與調整
+
+保存後重開工具，勾選「使用學員濾波（選做）」，比較關閉與開啟時的反應。不需要重新訓練KNN，因為這次修改的是分類後的輸出流程。
+
+先測固定手勢，再測快速切換、短暫分類跳動、未知手勢及手離開畫面。穩定動作應能持續輸出，新手勢確認後應切換，未知或無手時應立即停止。
+
+如果動作仍慢，先看KNN的原始分類是否已經穩定，再調整 `hold_seconds` 或 `fast_hold_seconds`；如果常誤切換，可以增加確認時間，或提高 `strong_vote`。每次只改一個參數並記錄結果，保留至少連續兩次確認；也記得 `hold_seconds` 同時控制舊動作的保留時間。
 
 ### 接口測試與實際確認
 
@@ -502,13 +621,13 @@ class StudentFilter:
 **Windows PowerShell**
 
 ```powershell
-& '.\.venv\Scripts\python.exe' -m pytest tests/test_student_contracts.py
+& '.\.venv\Scripts\python.exe' -m pytest tests/test_student_contracts.py tests/test_filtering.py
 ```
 
 **Mac／Linux**
 
 ```bash
-./.venv/bin/python -m pytest tests/test_student_contracts.py
+./.venv/bin/python -m pytest tests/test_student_contracts.py tests/test_filtering.py
 ```
 
 看到 `passed` 表示通過這份測試涵蓋的檢查，還需要在下一節訓練與實測，確認辨識效果。
