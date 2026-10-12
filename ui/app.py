@@ -26,6 +26,7 @@ class App:
         self.algorithm_status={'normalization':False,'knn':False,'filter':False};self.recording=False;self.samples=[];self.labels=[];self.record_start=0;self.last_record=0;self.feature_count=0
         self.filter_enabled=False;self.mode='preview';self.raw_result=None;self.record_label=0;self.record_batch='batch-01';self.record_purpose='train';self.worker=None
         self.capture_reason='鏡頭尚未開啟';self.hand_status='尚未偵測'
+        self.normalization_reason=''
         self.sent_availability=None
         self.pair_busy=False;self.batch_paths={}
         self.tool_notifications=queue.Queue()
@@ -45,7 +46,7 @@ class App:
         data=ttk.Frame(data_page);data.pack(side='left',fill='y',padx=(0,16))
         capture=ttk.LabelFrame(data_page,text='採集即時預覽',padding=10);capture.pack(side='right',fill='both',expand=True)
         self.capture_status=ttk.Label(capture,text='',wraplength=420);self.capture_status.pack(anchor='w',pady=5)
-        ttk.Label(capture,text='保持同一手勢，確認整隻手與關鍵點都在畫面內。',wraplength=420).pack(side='bottom',anchor='w',pady=(10,0))
+        ttk.Label(capture,text='可錄左手、右手或雙手；同一類保持相同手勢與手數，每次只對應一個動作。',wraplength=420).pack(side='bottom',anchor='w',pady=(10,0))
         capture_area=ttk.Frame(capture);capture_area.pack(fill='both',expand=True)
         self.capture_preview=ttk.Label(capture_area,text='請先到「即時辨識」開啟鏡頭',anchor='center')
         self.capture_preview.place(relwidth=1,relheight=1)
@@ -104,11 +105,16 @@ class App:
                 tracked,reason=raw_valid(sample,self.config);result=None;pred=None
                 self.capture_reason=reason
                 self.hand_status='、'.join(name for name,hand in [('左手',sample.left),('右手',sample.right)] if hand is not None) or '無手（或左右手判定可信度不足）'
+                self.normalization_reason=''
                 try:
                     result=feature(sample,self.config)
                     if result.valid:self.algorithm_status['normalization']=True
+                    else:
+                        self.normalization_reason=result.reason or '正規化未接受此樣本'
+                        reason=self.normalization_reason
                 except Exception as exc:
                     self.algorithm_status['normalization']=False;reason=str(exc)
+                    self.normalization_reason=reason
                 if self.mode=='recognize' and result and result.valid:
                     if self.model is None:reason='請訓練或載入個人KNN模型'
                     else:
@@ -148,6 +154,7 @@ class App:
         self.capture_preview.config(image='',text='請先到「即時辨識」開啟鏡頭')
         self.router.update(tracked=False)
         self.capture_reason='鏡頭已停止';self.hand_status='尚未偵測'
+        self.normalization_reason=''
 
     def change_filter(self):
         self.filter_enabled=self.filter_var.get();self.config['filter_enabled']=self.filter_enabled
@@ -180,8 +187,7 @@ class App:
     def save_record(self):
         self.recording=False
         if not self.samples:
-            expected='只能右手單獨入鏡'
-            messagebox.showinfo('沒有有效樣本',f'本次沒有收進有效樣本。\n目前偵測：{self.hand_status}\n採集狀態：{self.capture_reason or "目前可採集"}\n單手模式指定：{expected}\n\n確認指定的手有關鍵點，倒數結束後「原始有效」筆數持續增加再保存。\n正規化尚未完成不會阻止原始資料採集。');return
+            messagebox.showinfo('沒有有效樣本',f'本次沒有收進有效樣本。\n目前偵測：{self.hand_status}\n採集狀態：{self.capture_reason or "目前可採集"}\n可使用左手、右手或雙手。\n\n確認入鏡的手有完整關鍵點，倒數結束後「有效」筆數持續增加再保存。\n正規化尚未完成不會阻止原始資料採集。');return
         path=ROOT/'data'/f'{self.record_batch}-{self.record_label}-{time.time_ns()}.npz'
         save_batch(path,list(self.samples),list(self.labels),self.record_purpose,dict(self.config));self.notice=f'已保存 {len(self.samples)} 筆原始關鍵點';self.refresh_files()
 
@@ -254,10 +260,11 @@ class App:
     def render(self):
         self.pair_button.config(text='解除配對' if self.client and self.client.token else '配對',state='disabled' if self.pair_busy else 'normal')
         self.counts.config(text=f'有效 {len(self.samples)} 筆')
-        expected='僅限右手，請勿同時放入左手'
+        expected='左手／右手／雙手皆可，可混合採集於同一模型'
         countdown=f'倒數 {max(0,self.record_start-time.monotonic()):.1f} 秒' if self.recording and time.monotonic()<self.record_start else ('錄製中' if self.recording else self.capture_reason or '可採集原始關鍵點')
-        self.capture_status.config(text=f'{expected} · 偵測：{self.hand_status}\n採集狀態：{countdown}')
-        self.details.config(text=f'正規化：{"可用" if self.algorithm_status["normalization"] else "未完成／無效"} · KNN：{"可用" if self.algorithm_status["knn"] else "未完成／未載入"} · 濾波：{"啟用" if self.filter_enabled else "未啟用（選做）"} · 原分類 {self.raw_result}')
+        normalization_hint=f'\n正規化提示：{self.normalization_reason}' if self.normalization_reason else ''
+        self.capture_status.config(text=f'{expected} · 偵測：{self.hand_status}\n採集狀態：{countdown}{normalization_hint}')
+        self.details.config(text=f'正規化：{"可用" if self.algorithm_status["normalization"] else "未完成／無效"} · KNN：{"可用" if self.algorithm_status["knn"] else "未完成／未載入"} · 濾波：{"啟用" if self.filter_enabled else "未啟用（選做）"} · 原分類 {self.raw_result}{normalization_hint}')
         with self.image_lock:frame=self.latest
         if frame is not None:
             for widget in (self.preview,self.capture_preview):
