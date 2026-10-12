@@ -5,10 +5,6 @@ title: 手勢訓練器：學員操作與程式實作指南
 
 # 手勢訓練器：從第一筆資料到控制競技場
 
-> **Demo 版本**：本專案已完成正規化、KNN 與濾波實作，並附上目前訓練好的模型、錄製資料及測試報告。完成環境安裝後，可直接開啟工具，按「載入KNN模型」，開啟鏡頭並切換至 recognize。以下保留完整學員指南，方便重新採集、訓練或調整算法；不需要先重寫 student/ 才能使用 Demo。模型使用錄製者的手勢訓練，換人使用時可依指南重新錄製與訓練。
-
-> **介面更新**：Demo 介面已對齊桌面 `Gesture-Player-main` 新版學員包，包含左手／右手／雙手的採集說明與正規化提示。本次僅更新介面，保留原本的右手算法、訓練設定、錄製資料與模型，未重新訓練。因此示範辨識仍請使用原本的右手手勢；介面的左手／雙手說明是新版學員包的文字，目前 Demo 尚未啟用這些算法。
-
 本文預設學員已依課前通知安裝好 **VS Code 與 Python 3.13.2**。
 
 >若還未完成，請先安裝完畢後再進行以下步驟，如安裝遇到問題，請妥善利用網路資源，或尋求助教協助。
@@ -22,15 +18,16 @@ title: 手勢訓練器：學員操作與程式實作指南
 - [5. 完成正規化、KNN與選做濾波](#step-5)
 - [6. 訓練並試試辨識效果](#step-6)
 - [7. 連上競技場](#step-7)
-- [8. 其它](#others)
+- [選做：左手、雙手與混合手勢](#mixed-hands)
+- [其它](#others)
 
 <a id="step-1"></a>
 ## 1. 下載專案
 
-1. 開啟 [GitHub專案](https://github.com/YTolemop/Gesture-Player-Demo)，按 **Code → Download ZIP**。
+1. 開啟 [GitHub專案](https://github.com/YTolemop/Gesture-Player)，按 **Code → Download ZIP**。
 ![螢幕擷取畫面 2026-10-10 164705](https://hackmd.io/_uploads/SkYAsuwsfx.png)
 3. 完整解壓縮到自己的資料夾，不要在壓縮檔裡直接執行。
-4. 開啟VS Code。選「檔案 → 開啟資料夾」，開啟解壓後的 **Gesture-Player-Demo-main**。
+4. 開啟VS Code。選「檔案 → 開啟資料夾」，開啟解壓後的 **Gesture-Player-main**。
 ![螢幕擷取畫面 2026-10-10 180343](https://hackmd.io/_uploads/rkepatwjfl.png)
 6. 選「終端機 → 新增終端機」。接下來的命令都在這裡輸入。
 ![螢幕擷取畫面 2026-10-10 164645](https://hackmd.io/_uploads/ryKk3Ovifg.png)
@@ -45,8 +42,8 @@ title: 手勢訓練器：學員操作與程式實作指南
 <summary>已經會使用Git？也可以這樣下載</summary>
 
 ```bash
-git clone https://github.com/YTolemop/Gesture-Player-Demo.git
-cd Gesture-Player-Demo
+git clone https://github.com/YTolemop/Gesture-Player.git
+cd Gesture-Player
 ```
 
 </details>
@@ -98,6 +95,8 @@ python3.13 -m venv .venv
 <a id="step-3"></a>
 ## 3. 開啟工具，確認鏡頭
 
+以下保留右手單手的入門路線。工具本身也接受左手與雙手，不需要切換模式；想在同一模型混合使用，完成基礎閱讀後接著看「[左手、雙手與混合手勢](#mixed-hands)」。算法仍由學員實作，採集成功不代表目前的正規化已支援所有手勢。
+
 之後每次開啟，只要用這一行。
 
 **Windows PowerShell**
@@ -130,7 +129,7 @@ python3.13 -m venv .venv
 <a id="step-4"></a>
 ## 4. 錄下十種手勢
 
-先為每一類想一個**不同的右手固定姿勢**，把對應記下來。例如張開五指代表跳、握拳代表蹲下；這只是例子，你可以自行設計。
+先為每一類想一個**不同的固定姿勢**，把對應記下來。例如張開五指代表跳、握拳代表蹲下；這只是例子，你可以自行設計。想要用左手或者是雙手也都可以，這邊為了簡單選擇使用右手單手進行教學。
 
 | 類別編號 | 標籤 | 遊戲動作 |
 |---|---|---|
@@ -252,6 +251,13 @@ from core.types import RawHandSample, FeatureResult
 
 class StudentNormalizer:
     def transform(self, sample: RawHandSample, config: dict) -> FeatureResult:
+        # 本入門算法只接受右手單獨入鏡；工具仍可採集左手與雙手。
+        if sample.right is None or sample.left is not None:
+            return FeatureResult(
+                valid=False,
+                reason='此入門算法僅接受右手單手，混合手勢請使用進階範例',
+                featureVersion=config['feature_version'],
+            )
         # 換成一致的像素尺度；建立副本，不修改輸入。
         points = np.array(sample.right, dtype=np.float64, copy=True)
         points[:, 0] *= sample.width
@@ -563,7 +569,97 @@ config.get('distance_threshold', 1.0)
 2. 按「訓練」，以新設定重新建立並載入模型；目前模型相容檢查包含這些參數，舊模型不能直接用新設定載入。
 3. 按「測試」，比較獨立test結果，再做即時辨識。
 
-建議每次只改一個參數並記錄結果。只調KNN參數通常不用重新採集；修改正規化特徵定義則需要重新計算特徵並訓練。右手單手規則仍固定，不能透過修改hand_mode或single_hand改變。
+建議每次只改一個參數並記錄結果。只調KNN參數通常不用重新採集；修改正規化特徵定義則需要重新計算特徵並訓練。工具接受左手、右手與雙手，是否能分類取決於你的正規化及訓練資料。舊設定hand_mode、single_hand與mirror_left已不控制採集；特徵中的翻轉策略由學員實作。
+
+<a id="mixed-hands"></a>
+## 選做：左手、雙手與混合手勢
+
+要開放更多手勢，請用本節的正規化替換第5節A的入門版本，並重新訓練。**同一份資料、同一個模型可以同時包含左手單手、右手單手與雙手手勢，不需要切換模式，也不強迫十種類別都用雙手。**
+
+不論使用幾隻手，整個姿勢每次只對應一個遊戲動作。雙手共同代表一個類別，例如雙手張開代表BLOCK；不是左手輸出移動、右手同時輸出攻擊。分類器回傳一個`Prediction`，其label是十個動作之一；拒絕分類則回NONE。
+
+### 設計、採集與缺手
+
+1. 為各類別記錄使用哪隻手、手型及兩手的相對位置。例如MOVE_LEFT用左手、MOVE_RIGHT用右手、BLOCK用雙手。
+2. 同一類的train與test使用相同設計；若同一動作有多種替代姿勢，每種都各錄train與test。
+3. 雙手類別錄製時確認左右手都有關鍵點；雙手遮擋、交叉或靠太近可能造成偵測失敗。畫面左右位置不代表解剖學左右手，請分別伸出左、右手確認標示，需要時調整swap_handedness。
+4. 原始資料採集只要求至少一隻有效的手，不知道你選的類別需要幾隻手。錄雙手類別時若漏掉一隻，工具仍可能收進單手資料；請檢查偵測文字，出錯的批次重錄。
+5. 分類拒絕、無手或無效追蹤時應輸出NONE。雙手少一隻時也可能成為有效的已訓練單手姿勢，不能一律停止所有單手分類；請測試這些過渡姿勢，必要時改手勢或在算法中增加拒絕條件。
+
+`sample.left`與`sample.right`各是`(21,3)`陣列，未偵測到的手是`None`。保存檔原本就有左右兩個欄位及存在標記，因此舊右手原始資料可繼續重算特徵；要學新的左手或雙手姿勢仍須補錄。
+
+### 固定長度的混合手勢特徵
+
+工具接受學員自訂的非空一維float32特徵`(D,)`，但**同一模型所有樣本的D與欄位意義必須一致**。不能單手回63維、雙手回126維。以下範例固定使用131維：
+
+| 索引 | 內容 |
+|---|---|
+| 0～62 | 左手：手腕歸零、除以自己的手掌大小；缺手填0 |
+| 63～125 | 右手：同樣正規化；缺手填0 |
+| 126～127 | 左、右手存在標記；存在填2，缺手填0 |
+| 128～130 | 右手腕減左手腕的xyz，除以兩手平均手掌大小；缺任一手填0 |
+
+各手的63維保留手型與方向；最後3維保留兩手的相對位置，避免兩手各自歸零後丟失這項資訊。左、右欄位固定，不能按偵測順序或畫面左右排列。兩手深度z各有自己的參考原點，因此相對位置的z在此填0，只使用可靠的影像平面x、y；不是兩手真實三維距離。
+
+存在標記使用2作為距離權重，讓缺手與握拳不會只靠零值混在一起。用本範例的歐氏距離及distance_threshold=1.0時，手數／左右存在狀態不相同的樣本距離至少2，會被拒絕；若提高門檻，這項保護也會變弱。可自行調整特徵權重，但要重新評估門檻。
+
+### 混合手勢正規化完整實作
+
+以下整段替換`student/normalization.py`。保留原有類別及函式接口，不要把兩份transform放在同一類別中。
+
+```python
+import numpy as np
+from core.types import RawHandSample, FeatureResult
+
+
+class StudentNormalizer:
+    def transform(self, sample: RawHandSample, config: dict) -> FeatureResult:
+        features = np.zeros(131, dtype=np.float32)
+        wrists = [None, None]
+        sizes = [None, None]
+
+        for slot, hand in enumerate((sample.left, sample.right)):
+            if hand is None:
+                continue
+            points = np.array(hand, dtype=np.float64, copy=True)
+            points *= np.array([sample.width, sample.height, sample.width])
+            wrists[slot] = points[0].copy()
+            centered = points - points[0]
+            sizes[slot] = np.linalg.norm(centered[9])
+            start = slot * 63
+            features[start:start + 63] = (centered / sizes[slot]).reshape(63)
+            features[126 + slot] = 2.0
+
+        if wrists[0] is None and wrists[1] is None:
+            return FeatureResult(
+                valid=False, reason='無手',
+                featureVersion=config['feature_version'],
+            )
+        if wrists[0] is not None and wrists[1] is not None:
+            relative = (wrists[1] - wrists[0]) / ((sizes[0] + sizes[1]) / 2)
+            relative[2] = 0.0  # 每隻手的z參考原點不同，只保留相對x、y。
+            features[128:131] = relative
+
+        return FeatureResult(
+            valid=True, features=features,
+            featureVersion=config['feature_version'],
+        )
+```
+
+共用工具會先檢查入鏡的每隻手：尺寸、21個點、有限數值及至少10px的手掌尺度，再呼叫此算法。算法可以自行拒絕不支援的樣本，但必須回傳`valid=False`且features為None。
+
+### KNN、版本與重新訓練
+
+第5節B的KNN完整實作可直接沿用：NumPy減法與axis=1會自動處理D個欄位，程式沒有把維度寫死。該節的63維解說對應右手入門版本；本節fit收到`(N,131)`，predict收到`(131,)`。自訂特徵也遵循`(N,D)`與`(D,)`的接口。
+
+修改特徵欄位、維度、正規化或權重後：
+
+1. 更新實際使用設定檔的feature_version，例如`mixed-hands-131-v1`。一般使用config.example.json；若有config.json，工具優先讀取它。相同維度也可能有不同意義，工具不能自動判斷算法內容，請主動更新版本。
+2. 保存算法與設定，關閉並重開工具。
+3. 用原始資料重新「訓練」，再「測試」。工具會記錄模型維度與版本，拒絕不相容的模型或辨識輸入。舊格式的KNN模型需重新訓練。
+4. 實測左手、右手、雙手、兩手位置變化、單雙手切換、雙手缺一手，以及全部離開畫面；確認每次只有一個動作，未知姿勢能拒絕，無手時停止輸出。
+
+特徵變長後，舊距離門檻不一定合適。保持train／test獨立，再依實測調整k、距離與投票門檻。每種類別都需要足夠樣本，單手與雙手樣本數也應避免差距過大。
 
 <a id="others"></a>
 ## 其它
@@ -601,7 +697,7 @@ config.get('distance_threshold', 1.0)
 | predict | ui/app.py即時辨識、core/model_io.py測試 | 評估、濾波或直接輸出 |
 | update、reset | core/features.py的OutputRouter | 控制輸出與清除歷史 |
 
-訓練只讀train，測試只讀test；共用工具先驗證右手、尺寸、數值與手掌尺度，再呼叫正規化。你只要使用參數、計算並return。正規化定義改變後需要重算特徵、重新訓練；目前特徵版本由main.py固定，如要新增版本由老師維護。
+訓練只讀train，測試只讀test；共用工具先驗證至少一隻手及所有入鏡手的尺寸、數值與手掌尺度，再呼叫正規化。你只要使用參數、計算並return。正規化定義改變後需要更新設定檔的feature_version、重算特徵並重新訓練；main.py不再固定特徵版本或限定右手。
 
 </details>
 
