@@ -1,9 +1,4 @@
----
-title: 手勢訓練器：學員操作與程式實作指南
-
----
-
-# 手勢訓練器：從第一筆資料到控制競技場
+# 手勢訓練器：學員操作與程式實作指南
 
 本文預設學員已依課前通知安裝好 **VS Code 與 Python 3.13.2**。
 
@@ -18,6 +13,7 @@ title: 手勢訓練器：學員操作與程式實作指南
 - [5. 完成正規化、KNN與選做濾波](#step-5)
 - [6. 訓練並試試辨識效果](#step-6)
 - [7. 連上競技場](#step-7)
+- [選做：優化KNN參數](#Optimize-KNN)
 - [選做：左手、雙手與混合手勢](#mixed-hands)
 - [其它](#others)
 
@@ -61,7 +57,7 @@ Python已安裝好，這一步替專案建立獨立環境並安裝需要的套�
 
 ### 在終端機建立環境
 
-Windows先確認版本，再建立環境：
+Windows：
 
 ```powershell
 python --version
@@ -71,10 +67,20 @@ python -m venv .venv
 & '.\.venv\Scripts\python.exe' main.py check
 ```
 
-Mac／Linux使用：
-
+Mac先執行：
 ```bash
 python3.13 --version
+python3.13 -m venv .venv
+./.venv/bin/python -m pip install -r requirements-lock.txt
+./.venv/bin/python main.py prepare
+./.venv/bin/python main.py check
+```
+
+Linux先執行：
+```bash
+python3.13 --version
+sudo apt update
+sudo apt install python3.13-tk python3.13-venv
 python3.13 -m venv .venv
 ./.venv/bin/python -m pip install -r requirements-lock.txt
 ./.venv/bin/python main.py prepare
@@ -660,7 +666,8 @@ class StudentFilter:
 5. 網站顯示辨識器已連線、算法可用後，按「確認準備」，選技能並等待倒數。
 6. 試左右移動、普通攻擊與技能；最後把手移開，確認角色停止接收動作。
 
-## 想改善辨識？再調整KNN參數
+<a id="Optimize-KNN"></a>
+## 選做：優化KNN
 
 學員可以調整 `k`、`vote_threshold`、`distance_threshold`。直接修改專案內的 `config.example.json`。JSON數值不要加引號，並保留正確逗號格式。
 
