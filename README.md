@@ -6,6 +6,7 @@
 
 ## 目錄
 
+- [專案架構與資料流程](#architecture)
 - [1. 下載專案](#step-1)
 - [2. 建立.venv與安裝套件](#step-2)
 - [3. 開啟工具，確認鏡頭](#step-3)
@@ -16,6 +17,52 @@
 - [選做：優化KNN參數](#Optimize-KNN)
 - [選做：左手、雙手與混合手勢](#mixed-hands)
 - [其它](#others)
+
+<a id="architecture"></a>
+## 專案架構與資料流程
+
+`main.py` 讀取設定並啟動工具，`ui/` 提供採集、訓練、辨識與配對介面，`core/` 處理資料與介面檢查，`student/` 保留學員要完成的演算法，`network/` 負責競技場連線。
+
+```text
+main.py                    命令列入口與設定載入
+ui/app.py                  GUI：採集、訓練、即時辨識與配對
+core/
+  camera.py、landmarks.py   讀取鏡頭與手部關鍵點
+  types.py                 定義原始資料、特徵與預測結果格式
+  dataset.py               讀寫錄製批次與用途資訊
+  features.py              檢查原始資料、呼叫正規化、管理濾波與輸出
+  model_io.py              串接訓練、模型儲存／載入與獨立測試
+  labels.py                固定遊戲動作標籤
+  resources.py             下載與驗證 MediaPipe 關節模型
+student/
+  normalization.py         學員實作：將關鍵點轉成固定長度特徵
+  knn.py                   學員實作：保存樣本、分類與拒絕判斷
+  filtering.py             選做：時間濾波與狀態重設
+network/                   配對與傳送遊戲指令
+config.example.json        預設設定；若有 config.json，優先讀取該檔
+protocol/                  競技場通訊格式與標籤規格
+tests/                     演算法介面與共用工具測試
+```
+
+```text
+採集
+  鏡頭 → MediaPipe → 左右手關鍵點 + 類別／train 或 test 用途 → data/*.npz + .json
+
+訓練與測試
+  train 資料 → 共用檢查 → 學員正規化 → 學員 KNN → models/knn.npz + .json
+  test 資料  → 相同特徵轉換 → 已訓練模型 → models/evaluation.json
+
+即時辨識與遊玩
+  鏡頭 → 手部資料 → 共用檢查 → 正規化 → KNN → 可選濾波 → 單一遊戲動作 → 競技場
+```
+
+GUI 與錄製功能可以先用來確認鏡頭、收集資料；採集成功不代表辨識演算法已完成。學員主要修改 `student/` 的三個檔案，保留原有介面，由共用工具負責呼叫。
+
+本版本每次輸出一個遊戲動作。即使使用雙手或混合手勢，也是一個姿勢對應一個類別；詳見「左手、雙手與混合手勢」。
+
+`assets/models/hand_landmarker.task` 是 MediaPipe 關節模型，`models/knn.npz` 才是訓練產生的手勢分類模型。修改正規化後，需更新 `feature_version` 並重新訓練，讓訓練、測試與即時辨識使用相同的特徵定義。
+
+閱讀程式時，先看 `core/types.py` 的輸入與回傳格式，再看 `student/` 的介面；需要理解工具如何呼叫演算法時，再看 `core/features.py` 與 `core/model_io.py`。
 
 <a id="step-1"></a>
 ## 1. 下載專案
