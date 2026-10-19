@@ -1,6 +1,6 @@
 import numpy as np
-from core.labels import LABELS
-from core.types import Prediction
+from student.labels import LABELS
+from student.types import Prediction
 
 
 class StudentKNN:

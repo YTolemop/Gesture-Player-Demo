@@ -1,139 +1,87 @@
+"""Socket.IO transport. Recognition belongs in student/pipeline.py."""
 import threading
 import time
 import uuid
 import socketio
-from network.preview import encode_preview
+from network.commands import Commands
+
+NAMESPACE = "/controller"
+
 
 class ArenaClient:
-    def __init__(self, router, on_status=lambda _: None, reset=lambda: None):
-        self.router, self.on_status, self.reset = router, on_status, reset
-        self.sio=socketio.Client(reconnection=True, logger=False, engineio_logger=False)
-        self.pending_preview=None; self.last_preview=0.0
-        self.context={}; self.token=None; self.room=None; self.seq=0; self.lock=threading.RLock(); self.stop=threading.Event()
-        self.sio.on('controller:context',self._context,namespace='/controller')
-        self.sio.on('connect',self._connected,namespace='/controller')
-        self.sio.on('disconnect',self._disconnected,namespace='/controller')
-        self.thread=threading.Thread(target=self._send,daemon=True);self.thread.start()
+    def __init__(self):
+        self.sio = socketio.Client(reconnection=False)
+        self.lock = threading.RLock()
+        self.context = {}
+        self.revision = 0
+        self.seq = 0
+        self.neutral_until = 0
+        self.last_heartbeat = 0
+        self.sio.on("controller:context", self._context, namespace=NAMESPACE)
+        self.sio.on("disconnect", self._disconnect, namespace=NAMESPACE)
 
-    @property
-    def paired(self):
+    def _context(self, value):
         with self.lock:
-            return bool(self.token and not self.stop.is_set() and self.sio.connected
-                        and '/controller' in self.sio.namespaces and self.context.get('sessionId'))
-
-    def call(self,event,payload):
-        result=self.sio.call(event,{**payload,'requestId':str(uuid.uuid4())},namespace='/controller',timeout=5)
-        if not result.get('ok'):
-            raise RuntimeError(result.get('errorCode','ACK_ERROR'))
-        return result
-
-    def connect(self,server,room,pair_code,source='recognizer',algorithms=None):
-        self.room=room;self.sio.connect(server,namespaces=['/controller'],socketio_path='socket.io')
-        result=self.call('controller:pair',{'protocolVersion':1,'roomCode':room,'pairCode':pair_code,'source':source,'algorithms':algorithms or {}})
-        with self.lock:
-            if self.stop.is_set():
-                raise RuntimeError('配對已解除，請重新產生配對碼')
-            self.room=result['roomCode'];self.token=result['controllerToken']
-            self.context={**self.context,**result};self.seq=0;self.pending_preview=None;self.last_preview=0.0
-        self.router.clear();self.on_status(f"已配對 {result['seat']}，等待新 NONE 解除")
-        return result
-
-    def _connected(self):
-        with self.lock:
-            token,room=self.token,self.room
-        if token and not self.stop.is_set():
-            def resume():
-                try:
-                    result=self.call('controller:resume',{'roomCode':room,'controllerToken':token})
-                    with self.lock:
-                        if self.stop.is_set() or self.token!=token:return
-                        self._context(result);self.on_status('已重新配對，請在網站確認準備並恢復')
-                except Exception as exc:
-                    self.close()
-                    self.on_status(f'恢復配對失敗：{exc}；請重新產生配對碼')
-            threading.Thread(target=resume,daemon=True).start()
-
-    def _disconnected(self, reason=None):
-        terminal=reason in (socketio.Client.reason.SERVER_DISCONNECT,socketio.Client.reason.CLIENT_DISCONNECT) or self.stop.is_set()
-        with self.lock:
-            self.context={};self.pending_preview=None;self.last_preview=0.0
-            if terminal:
-                self.token=None;self.room=None;self.stop.set()
-        self.router.clear();self.reset()
-        self.on_status('已解除配對，請重新產生配對碼' if terminal else '連線中斷，已停止輸出；等待重新連線')
-
-    def _context(self,v):
-        with self.lock:
-            if self.stop.is_set():return
-            old=self.context
-            changed=any(old.get(k)!=v.get(k) for k in ('matchId','sessionId','generation','phase'))
-            self.context={**old,**v}
-            if old.get('sessionId')!=v.get('sessionId'):
-                self.seq=0
+            changed = any(self.context.get(k) != value.get(k) for k in
+                          ("sessionId", "matchId", "generation", "phase"))
+            if self.context.get("sessionId") != value.get("sessionId"):
+                self.seq = 0
+            self.context.update(value)
             if changed:
-                self.pending_preview=None;self.last_preview=0.0
-                self.router.clear();self.reset()
+                self.revision += 1
+                self.neutral_until = time.monotonic() + .25
 
-    def preview(self, frame, sample):
-        # Encoding is throttled; network sends run on the existing sender thread.
-        if self.stop.is_set() or not self.sio.connected or '/controller' not in self.sio.namespaces:
-            return
-        now=time.monotonic()
+    def _disconnect(self, reason=None):
         with self.lock:
-            c=dict(self.context)
-            if not c.get('sessionId') or c.get('source')!='recognizer' or now-self.last_preview<.15:
-                return
-            self.last_preview=now
+            self.context = {}
+            self.revision += 1
+
+    def call(self, event, payload):
+        result = self.sio.call(event, {**payload, "requestId": str(uuid.uuid4())},
+                               namespace=NAMESPACE, timeout=5)
+        if not result.get("ok"):
+            raise RuntimeError(result.get("errorCode", "ACK_ERROR"))
+        return result
+
+    def connect(self, server, room, pair_code, algorithms):
         try:
-            payload=encode_preview(frame, sample)
+            self.sio.connect(server, namespaces=[NAMESPACE], socketio_path="socket.io")
+            result = self.call("controller:pair", {
+                "protocolVersion": 1, "roomCode": room, "pairCode": pair_code,
+                "source": "recognizer", "algorithms": algorithms})
+            self._context(result)
+            return result
         except Exception:
-            return  # Preview failures must never interrupt gesture recognition.
-        if payload is None:
-            return
-        payload.update(protocolVersion=1, sessionId=c['sessionId'], generation=c.get('generation',1))
+            self.close()
+            raise
+
+    def send(self, commands: Commands, revision=None):
+        if not isinstance(commands, Commands):
+            raise TypeError("Pipeline.predict must return Commands")
         with self.lock:
-            if self.stop.is_set() or any(self.context.get(k)!=c.get(k) for k in ('sessionId','generation','phase','source')):
-                return
-            self.pending_preview=payload
-
-    def _send(self):
-        last_heartbeat=0
-        while not self.stop.wait(.1):
-            if not self.sio.connected or '/controller' not in self.sio.namespaces:
-                continue
-            with self.lock:
-                c=dict(self.context)
-                if not c.get('sessionId'):
-                    continue
-                v={'protocolVersion':1,'sessionId':c['sessionId'],'matchId':c.get('matchId'),'generation':c.get('generation',1),'seq':self.seq,'gesture':self.router.read()};self.seq+=1
-            try:
-                self.sio.emit('input:state',v,namespace='/controller')
-                with self.lock:
-                    preview=self.pending_preview;self.pending_preview=None
-                    if preview and (preview['sessionId']!=self.context.get('sessionId') or preview['generation']!=self.context.get('generation') or self.context.get('source')!='recognizer'):
-                        preview=None
-                if preview:
-                    self.sio.emit('camera:frame',preview,namespace='/controller')
-                if time.monotonic()-last_heartbeat>=.5:
-                    self.sio.emit('client:heartbeat',{},namespace='/controller');last_heartbeat=time.monotonic()
-            except Exception as exc:
-                self.on_status(str(exc))
-
-    def availability(self,**flags):
-        if self.paired:
-            return self.call('controller:availability',flags)
+            c = self.context
+            if not self.sio.connected or not c.get("sessionId"):
+                raise RuntimeError("Arena disconnected; generate a new pair code and run again")
+            if (revision is not None and revision != self.revision) or time.monotonic() < self.neutral_until:
+                commands = Commands()
+            payload = {"protocolVersion": 1, "sessionId": c["sessionId"],
+                       "matchId": c.get("matchId"), "generation": c["generation"],
+                       "seq": self.seq, "commands": commands.payload()}
+            self.seq += 1
+            result = self.sio.call("input:state", payload, namespace=NAMESPACE, timeout=2)
+            if not result.get("ok"):
+                # A context event can race an in-flight packet; next frame uses fresh context.
+                if result.get("errorCode") not in ("STALE_GENERATION", "STALE_MATCH", "INVALID_SESSION"):
+                    raise RuntimeError(result.get("errorCode", "INPUT_REJECTED"))
+            if time.monotonic() - self.last_heartbeat >= .5:
+                self.sio.emit("client:heartbeat", {}, namespace=NAMESPACE)
+                self.last_heartbeat = time.monotonic()
+            return result
 
     def close(self):
-        self.router.clear()
-        self.stop.set()
-        with self.lock:
-            c=dict(self.context)
-            self.token=None;self.room=None;self.context={};self.pending_preview=None;self.last_preview=0.0
-        self.thread.join(timeout=2)
         if self.sio.connected:
-            if c.get('sessionId'):
-                try:
-                    self.sio.emit('input:state',{'protocolVersion':1,'sessionId':c['sessionId'],'matchId':c.get('matchId'),'generation':c.get('generation',1),'seq':self.seq,'gesture':'NONE'},namespace='/controller')
-                except Exception:
-                    pass
+            try:
+                self.send(Commands())
+            except Exception:
+                pass
             self.sio.disconnect()

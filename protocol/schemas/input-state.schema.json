@@ -8,7 +8,6 @@
     "sessionId",
     "matchId",
     "seq",
-    "gesture",
     "generation"
   ],
   "properties": {
@@ -50,6 +49,103 @@
     },
     "diagnostics": {
       "type": "object"
+    },
+    "commands": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "left",
+        "right",
+        "both"
+      ],
+      "properties": {
+        "left": {
+          "enum": [
+            "MOVE_LEFT",
+            "MOVE_RIGHT",
+            "JUMP",
+            "CROUCH",
+            "BLOCK",
+            "NORMAL_ATTACK",
+            "ATTACK_SKILL",
+            "DEFENSE_SKILL",
+            "CONTROL_SKILL",
+            "ULTIMATE",
+            "NONE"
+          ]
+        },
+        "right": {
+          "enum": [
+            "MOVE_LEFT",
+            "MOVE_RIGHT",
+            "JUMP",
+            "CROUCH",
+            "BLOCK",
+            "NORMAL_ATTACK",
+            "ATTACK_SKILL",
+            "DEFENSE_SKILL",
+            "CONTROL_SKILL",
+            "ULTIMATE",
+            "NONE"
+          ]
+        },
+        "both": {
+          "enum": [
+            "MOVE_LEFT",
+            "MOVE_RIGHT",
+            "JUMP",
+            "CROUCH",
+            "BLOCK",
+            "NORMAL_ATTACK",
+            "ATTACK_SKILL",
+            "DEFENSE_SKILL",
+            "CONTROL_SKILL",
+            "ULTIMATE",
+            "NONE"
+          ]
+        }
+      },
+      "anyOf": [
+        {
+          "properties": {
+            "both": {
+              "const": "NONE"
+            }
+          }
+        },
+        {
+          "properties": {
+            "left": {
+              "const": "NONE"
+            },
+            "right": {
+              "const": "NONE"
+            }
+          }
+        }
+      ]
     }
-  }
+  },
+  "oneOf": [
+    {
+      "required": [
+        "gesture"
+      ],
+      "not": {
+        "required": [
+          "commands"
+        ]
+      }
+    },
+    {
+      "required": [
+        "commands"
+      ],
+      "not": {
+        "required": [
+          "gesture"
+        ]
+      }
+    }
+  ]
 }

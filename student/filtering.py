@@ -1,5 +1,5 @@
 import math
-from core.types import Prediction
+from student.types import Prediction
 
 
 class StudentFilter:

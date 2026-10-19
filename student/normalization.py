@@ -1,5 +1,5 @@
 import numpy as np
-from core.types import RawHandSample, FeatureResult
+from student.types import HandSlots as RawHandSample, FeatureResult
 
 
 class StudentNormalizer:

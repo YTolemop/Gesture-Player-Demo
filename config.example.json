@@ -1,1 +1,22 @@
-{"swap_handedness":true,"feature_version":"mixed-hands-131-v1","k":5,"distance_threshold":1.0,"vote_threshold":0.6,"filter_enabled":false}
+{
+  "swap_handedness": true,
+  "feature_version": "mixed-hands-131-v1",
+  "k": 5,
+  "distance_threshold": 1.0,
+  "vote_threshold": 0.6,
+  "filter_enabled": false,
+  "handedness_threshold": 0.7,
+  "label_channels": {
+    "MOVE_LEFT": "left",
+    "MOVE_RIGHT": "right",
+    "JUMP": "left",
+    "CROUCH": "left",
+    "BLOCK": "both",
+    "NORMAL_ATTACK": "right",
+    "ATTACK_SKILL": "right",
+    "DEFENSE_SKILL": "both",
+    "CONTROL_SKILL": "right",
+    "ULTIMATE": "both"
+  },
+  "gesture_commands": {}
+}

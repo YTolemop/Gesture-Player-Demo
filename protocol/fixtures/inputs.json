@@ -87,6 +87,30 @@
       "seq": 10,
       "gesture": "NONE",
       "generation": 1
+    },
+    {
+      "protocolVersion": 1,
+      "sessionId": "fixture",
+      "matchId": null,
+      "generation": 1,
+      "seq": 30,
+      "commands": {
+        "left": "MOVE_LEFT",
+        "right": "BLOCK",
+        "both": "NONE"
+      }
+    },
+    {
+      "protocolVersion": 1,
+      "sessionId": "fixture",
+      "matchId": null,
+      "generation": 1,
+      "seq": 30,
+      "commands": {
+        "left": "NONE",
+        "right": "NONE",
+        "both": "JUMP"
+      }
     }
   ],
   "invalid": [
@@ -105,6 +129,42 @@
       "seq": -1,
       "gesture": "NONE",
       "generation": 1
+    },
+    {
+      "protocolVersion": 1,
+      "sessionId": "fixture",
+      "matchId": null,
+      "generation": 1,
+      "seq": 30,
+      "commands": {
+        "left": "MOVE_LEFT",
+        "right": "BLOCK",
+        "both": "JUMP"
+      }
+    },
+    {
+      "protocolVersion": 1,
+      "sessionId": "fixture",
+      "matchId": null,
+      "generation": 1,
+      "seq": 30,
+      "commands": {
+        "left": "NONE",
+        "right": "NONE"
+      }
+    },
+    {
+      "protocolVersion": 1,
+      "sessionId": "fixture",
+      "matchId": null,
+      "generation": 1,
+      "seq": 30,
+      "gesture": "NONE",
+      "commands": {
+        "left": "NONE",
+        "right": "NONE",
+        "both": "NONE"
+      }
     }
   ]
 }

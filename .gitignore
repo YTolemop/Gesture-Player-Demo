@@ -1,17 +1,17 @@
 .venv/
 __pycache__/
 .pytest_cache/
-data/*
-models/*
+assets/models/
 logs/
 config.json
+.migration-backups/
+*.pyc
 *.log
-pytest-cache-files-*/
-.test-tmp-*/
-
-# Demo includes recorded landmark samples and the trained model.
+data/*
 !data/*.npz
 !data/*.json
-!models/knn.npz
-!models/knn.json
-!models/evaluation.json
+!data/*.jsonl
+models/*
+!models/*.npz
+!models/*.json
+data-test/
