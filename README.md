@@ -137,18 +137,18 @@ python3.13 -m venv .venv
 
 先為每一類想一個**不同的固定姿勢**，把對應記下來。例如張開五指代表跳、握拳代表蹲下；這只是例子，你可以自行設計。想要用左手或者是雙手也都可以，這邊為了簡單選擇使用右手單手進行教學。
 
-| 類別編號 | 標籤 | 遊戲動作 |
-|---|---|---|
-| 0 | MOVE_LEFT | 向左移動 |
-| 1 | MOVE_RIGHT | 向右移動 |
-| 2 | JUMP | 跳躍 |
-| 3 | CROUCH | 蹲下 |
-| 4 | BLOCK | 格擋 |
-| 5 | NORMAL_ATTACK | 普通攻擊 |
-| 6 | ATTACK_SKILL | 攻擊技能 |
-| 7 | DEFENSE_SKILL | 防禦技能 |
-| 8 | CONTROL_SKILL | 控制技能 |
-| 9 | ULTIMATE | 大招 |
+| 類別編號 | 遊戲動作 | 對應指令 |
+| --- | --- | --- |
+| 0 | 向左移動 | `MOVE_LEFT` |
+| 1 | 向右移動 | `MOVE_RIGHT` |
+| 2 | 跳躍 | `JUMP` |
+| 3 | 蹲下 | `CROUCH` |
+| 4 | 防禦 | `BLOCK` |
+| 5 | 普通攻擊 | `NORMAL_ATTACK` |
+| 6 | 攻擊技能 | `ATTACK_SKILL` |
+| 7 | 防禦技能 | `DEFENSE_SKILL` |
+| 8 | 控制技能 | `CONTROL_SKILL` |
+| 9 | 終極技能 | `ULTIMATE` |
 
 ### 先完成一個類別，再換下一個
 
