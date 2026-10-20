@@ -17,6 +17,7 @@ class ArenaClient:
         self.seq = 0
         self.neutral_until = 0
         self.last_heartbeat = 0
+        self.last_preview = float("-inf")
         self.sio.on("controller:context", self._context, namespace=NAMESPACE)
         self.sio.on("disconnect", self._disconnect, namespace=NAMESPACE)
 
@@ -77,6 +78,27 @@ class ArenaClient:
                 self.sio.emit("client:heartbeat", {}, namespace=NAMESPACE)
                 self.last_heartbeat = time.monotonic()
             return result
+
+    def send_preview(self, frame, sample, revision=None):
+        """Send at most one current preview per 150ms, without an ACK wait."""
+        from network.preview import arena_preview
+
+        with self.lock:
+            now = time.monotonic()
+            c = self.context
+            if (not self.sio.connected or not c.get("sessionId") or
+                    "generation" not in c or
+                    (revision is not None and revision != self.revision) or
+                    now - self.last_preview < .15):
+                return
+            self.last_preview = now
+            payload = {"protocolVersion": 1, "sessionId": c["sessionId"],
+                       "generation": c["generation"], **arena_preview(frame, sample)}
+            try:
+                self.sio.emit("camera:frame", payload, namespace=NAMESPACE)
+            except socketio.exceptions.BadNamespaceError:
+                # Disconnect may race the preview; gameplay handles connection loss.
+                return
 
     def close(self):
         if self.sio.connected:

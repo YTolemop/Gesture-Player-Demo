@@ -50,7 +50,7 @@ def test_recording_without_windows_saves_samples_and_releases_on_interrupt(monke
 
 def test_run_passes_empty_frames_to_student_and_sends_student_commands(monkeypatch):
     from network.commands import Commands
-    received, sent, resets, closed = [], [], [], []
+    received, sent, resets, closed, previews = [], [], [], [], []
     class Camera:
         actual = {"index": 0}
         def __init__(self, index): self.count = 0
@@ -76,6 +76,8 @@ def test_run_passes_empty_frames_to_student_and_sends_student_commands(monkeypat
         revision = 0
         def connect(self, *args): return {"roomCode": "room"}
         def send(self, commands, revision): sent.append(commands)
+        def send_preview(self, frame, sample, revision):
+            previews.append((frame.copy(), sample, revision))
         def close(self): closed.append("client")
     # Let both test frames cross the network rate limit.
     import main
@@ -90,5 +92,8 @@ def test_run_passes_empty_frames_to_student_and_sends_student_commands(monkeypat
     capture(args)
     assert len(received) == 2 and received[1] == []
     assert sent == [Commands(right="BLOCK"), Commands()]
+    assert len(previews) == 2  # Web preview also runs without --preview.
+    assert previews[0][1].hands == received[0]
+    assert previews[1][1].hands == []
     assert len(resets) == 1  # Context reset only; missing-hand decisions belong to students.
     assert closed == ["client", "camera", "detector"]

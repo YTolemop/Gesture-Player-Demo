@@ -127,6 +127,8 @@ def capture(args):
                     if client and now - last_send >= .1:
                         client.send(commands, revision)
                         last_send = now
+                    if client:
+                        client.send_preview(frame, sample, revision)
                 if args.preview and not show_preview(frame, sample):
                     break
                 if now - last_report >= 1:

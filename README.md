@@ -191,15 +191,33 @@ python main.py recognize --preview
 
 ## 4. 連線遊戲
 
-1. 開啟[遊戲網站](https://ga-game.codpy.org/)，建立或加入房間。
-2. 選擇辨識器輸入，取得六位數配對碼。
-3. 使用實際房間代碼與配對碼啟動辨識：
+### PVE 連線（不需要房號）
+
+1. 開啟[遊戲網站](https://ga-game.codpy.org/)，選擇 PVE「一命連戰」。
+2. 控制來源選擇「手勢辨識器」，按「產生配對碼」。
+3. 在含有 `main.py` 的 Demo 或 initial 專案資料夾啟動辨識，將下方 `012345` 換成網站當下顯示的六位數配對碼：
 
 ```powershell
-python main.py run --server "https://ga-game.codpy.org" --room "ABCD" --pair-code "012345" --model models/model.npz --preview
+.\.venv\Scripts\python.exe main.py run --server "https://ga-game.codpy.org" --pair-code "012345" --model models/model.npz
 ```
 
-`ABCD` 與 `012345` 是範例，請換成網站顯示的值；配對碼保留前導零。網址不用加 `/controller`。看到 `Paired` 訊息後，回到網站準備並開始。
+4. 看到 `Paired` 後回到網站確認準備、選擇技能，倒數後開始挑戰。按「結束挑戰」會保存進行中挑戰的未完成紀錄、離開房間並回到首頁；再次遊玩需重新產生配對碼並啟動辨識器。
+
+配對碼用來連接自己的 Python 辨識器，並非雙人邀請碼；保留開頭的零，PVE 不必加 `--room`。配對碼過期或斷線後，請重新產生。網址不用加 `/controller`。macOS／Linux 將指令開頭換成 `./.venv/bin/python`；已啟用虛擬環境時可使用 `python`。initial 需先完成自己的辨識實作並訓練模型，Demo 可使用隨附的模型。
+
+`run` 會自動將鏡頭影像與手部骨架送到網站，無須加 `--preview`；加上 `--preview` 會另外開啟本機關節視窗。若有多支鏡頭，加上 `--camera 1` 選擇另一支。
+
+若出現 `No module named 'cv2'`，代表目前 Python 缺少 OpenCV；先用同一個虛擬環境安裝套件，再檢查：
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-lock.txt
+.\.venv\Scripts\python.exe main.py prepare
+.\.venv\Scripts\python.exe main.py check
+```
+
+若尚未建立 `.venv`，先執行 `py -3.13 -m venv .venv`。雙人對戰則在網站建立或加入房間，同樣使用自己的配對碼；`--room` 可選填。
+
+`run` 會使用同一支鏡頭，自動將 320×240 JPEG 與手部骨架傳到網站，約每 150ms 一次；無須加 `--preview`。`--preview` 另外開啟本機關節視窗。網頁影像保持與本機相同的鏡像方向；非 4:3 畫面等比例補黑邊，骨架一同轉換。`camera`、`record`、`recognize` 不傳送網站預覽。
 
 每個影格都做辨識，網路輸出上限約每秒 10 次。配對、封包序號、心跳與中立狀態由 `network/arena_client.py` 處理。比賽狀態改變時會清除辨識歷史，並短暫傳送中立狀態。停止時送出中立指令並關閉連線；斷線後重新取得配對碼，再啟動程式。
 
@@ -325,7 +343,7 @@ python -m pytest -q
 | 已配對但沒動作 | 確認網站已準備開始，查看終端機 commands 與遊戲冷卻／資源限制 |
 | 攻擊不會連發 | 離開該指令至少 6 個遊戲 tick，再做一次手勢 |
 
-鏡頭權限：Windows 需允許桌面應用程式使用攝影機；macOS 需在隱私權設定允許 Terminal／VS Code；Linux 需有裝置存取權限。影像與關節資料不會由本包上傳遊戲伺服器。
+鏡頭權限：Windows 需允許桌面應用程式使用攝影機；macOS 需在隱私權設定允許 Terminal／VS Code；Linux 需有裝置存取權限。`run` 會將縮小的鏡頭影像與二維手部骨架經遊戲伺服器轉送到同場網頁；原始錄影與完整關節資料留在本機。
 
 ## 指令速查
 
