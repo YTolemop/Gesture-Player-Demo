@@ -79,10 +79,10 @@ def test_run_passes_empty_frames_to_student_and_sends_student_commands(monkeypat
         def send_preview(self, frame, sample, revision):
             previews.append((frame.copy(), sample, revision))
         def close(self): closed.append("client")
-    # Let both test frames cross the network rate limit.
+    # Even frames less than 100ms apart must reach the transport's edge detection.
     import main
     counter = iter(range(100))
-    monkeypatch.setattr(main.time, "monotonic", lambda: float(next(counter)))
+    monkeypatch.setattr(main.time, "monotonic", lambda: float(next(counter)) * .03)
     monkeypatch.setitem(sys.modules, "core.camera", types.SimpleNamespace(Camera=Camera))
     monkeypatch.setitem(sys.modules, "core.landmarks", types.SimpleNamespace(Landmarks=Detector))
     monkeypatch.setitem(sys.modules, "student.pipeline", types.SimpleNamespace(Pipeline=Pipeline))

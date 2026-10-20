@@ -87,9 +87,9 @@ def capture(args):
             print(f"Recording: {stem}.mp4 + .jsonl", flush=True)
         start = last_frame = last_report = time.monotonic()
         previous_timestamp = None
-        last_send = 0
         revision = -1
         count = 0
+        last_report_count = 0
         print("Camera running. Ctrl+C stops and closes files.", flush=True)
         try:
             while args.seconds is None or time.monotonic() - start < args.seconds:
@@ -124,18 +124,17 @@ def capture(args):
                     commands = pipeline.predict(sample)
                     if not isinstance(commands, Commands):
                         raise TypeError("Pipeline.predict must return Commands")
-                    if client and now - last_send >= .1:
-                        client.send(commands, revision)
-                        last_send = now
                     if client:
+                        client.send(commands, revision)
                         client.send_preview(frame, sample, revision)
                 if args.preview and not show_preview(frame, sample):
                     break
                 if now - last_report >= 1:
-                    status = f"frames={count} hands={len(sample.hands)}"
+                    status = f"fps={(count - last_report_count) / (now - last_report):.1f} frames={count} hands={len(sample.hands)}"
                     if pipeline:
                         status += f" commands={commands.payload()}"
                     print(status, flush=True)
+                    last_report_count = count
                     last_report = now
         except KeyboardInterrupt:
             print("Stopped.")
