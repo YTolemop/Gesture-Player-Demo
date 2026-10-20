@@ -191,6 +191,22 @@ python main.py recognize --preview
 
 ## 4. 連線遊戲
 
+### PVP 連線（雙人對戰）
+
+1. 開啟[遊戲網站](https://ga-game.codpy.org/)，由一位玩家選擇 PVP「雙人對決」建立房間，將網站顯示的房號提供給另一位玩家。
+2. 另一位玩家在網站輸入相同房號，按「加入房間」。紅、藍兩席各一位玩家；第三人可觀戰，觀戰席不必啟動辨識器。
+3. 使用手勢的玩家各自在自己的網頁選擇控制來源「手勢辨識器」，按「產生配對碼」，並在自己的電腦執行下方指令。兩位玩家使用相同房號，但必須使用各自的六位數配對碼：
+
+```powershell
+.\.venv\Scripts\python.exe main.py run --server "https://ga-game.codpy.org" --room "ABCD" --pair-code "012345" --model models/model.npz
+```
+
+4. 將 `ABCD` 換成網站顯示的實際房號、`012345` 換成自己網頁產生的配對碼，保留配對碼開頭的零。看到 `Paired` 後回網站按「確認準備」；雙方就緒後自動倒數進入選技，選完後開戰。
+
+房號供朋友加入同一場對戰；配對碼用來連接自己席位的 Python 辨識器，請勿共用對方的配對碼。Python 的 `--room` 可選填，省略時也能透過自己的配對碼找到席位。選擇「網站鍵盤」的玩家不需要啟動 Python 或取得配對碼，仍須按「確認準備」。雙方可以分別使用手勢或鍵盤。
+
+macOS／Linux 將指令開頭換成 `./.venv/bin/python`；已啟用虛擬環境時可使用 `python`。網址不用加 `/controller`；配對碼過期或斷線後，請重新產生配對碼並啟動辨識器。離開房間後若要再玩，請重新加入或建立房間並配對。
+
 ### PVE 連線（不需要房號）
 
 1. 開啟[遊戲網站](https://ga-game.codpy.org/)，選擇 PVE「一命連戰」。
@@ -206,16 +222,6 @@ python main.py recognize --preview
 配對碼用來連接自己的 Python 辨識器，並非雙人邀請碼；保留開頭的零，PVE 不必加 `--room`。配對碼過期或斷線後，請重新產生。網址不用加 `/controller`。macOS／Linux 將指令開頭換成 `./.venv/bin/python`；已啟用虛擬環境時可使用 `python`。initial 需先完成自己的辨識實作並訓練模型，Demo 可使用隨附的模型。
 
 `run` 會自動將鏡頭影像與手部骨架送到網站，無須加 `--preview`；加上 `--preview` 會另外開啟本機關節視窗。若有多支鏡頭，加上 `--camera 1` 選擇另一支。
-
-若出現 `No module named 'cv2'`，代表目前 Python 缺少 OpenCV；先用同一個虛擬環境安裝套件，再檢查：
-
-```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements-lock.txt
-.\.venv\Scripts\python.exe main.py prepare
-.\.venv\Scripts\python.exe main.py check
-```
-
-若尚未建立 `.venv`，先執行 `py -3.13 -m venv .venv`。雙人對戰則在網站建立或加入房間，同樣使用自己的配對碼；`--room` 可選填。
 
 `run` 會使用同一支鏡頭，自動將 320×240 JPEG 與手部骨架傳到網站，約每 150ms 一次；無須加 `--preview`。`--preview` 另外開啟本機關節視窗。網頁影像保持與本機相同的鏡像方向；非 4:3 畫面等比例補黑邊，骨架一同轉換。`camera`、`record`、`recognize` 不傳送網站預覽。
 
